@@ -139,4 +139,9 @@ public class DiscordCommand implements SimpleCommand {
         VelocityMessageUtils.sendMessageFromConfig(source, "DiscordInfo", true);
     }
 
+    @Override
+    public boolean hasPermission(final Invocation invocation) {
+        return invocation.source().hasPermission("discordverifier.discord");
+    }
+
 }
