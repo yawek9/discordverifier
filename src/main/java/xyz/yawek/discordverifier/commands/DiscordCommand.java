@@ -62,7 +62,7 @@ public class DiscordCommand implements SimpleCommand {
         }
 
 
-        if (source.hasPermission("velocitydiscordverifier.admin")) {
+        if (source.hasPermission("discordverifier.admin")) {
             if (args.length < 2) {
                 VelocityMessageUtils.sendMessageFromConfig(source, "AdminCommandUsage", true);
                 return;
