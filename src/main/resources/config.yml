@@ -9,6 +9,7 @@ VerificationChannelID: "ENTER_YOUR_VERIFICATION_CHANNEL_ID_HERE"
 DeleteMessageAfter: 10
 VerificationExpireAfter: 120
 LimitRolesToOne: true
+ForceNicknamesOnDiscord: true
 Prefix: "&#FF5555&lDiscordVerifier &#AA0000» &#FF5555"
 AdminCommandUsage: "Available commands:\n&#FFFFFF/discord info <nick> &#FF5555- shows information about the player,\n&#FFFFFF/discord reload &#FF5555- reloads plugin."
 PlayerNotVerified: "Player is not verified."

@@ -14,6 +14,7 @@ public class LoginListener {
         MySQLDataAccess.createOrUpdatePlayerData(e.getPlayer().getUniqueId(), e.getPlayer().getUsername());
 
         VerificationManager.updateRoles(e.getPlayer());
+        VerificationManager.updateNickname(e.getPlayer());
 
         PlayerData playerData = new PlayerData(e.getPlayer().getUniqueId());
 

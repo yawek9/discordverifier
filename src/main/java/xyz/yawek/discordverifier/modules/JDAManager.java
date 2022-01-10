@@ -111,5 +111,9 @@ public class JDAManager {
             return null;
         }
     }
+
+    public static void setNickname(Member member, String nickname) {
+        member.modifyNickname(nickname).queue();
+    }
     
 }

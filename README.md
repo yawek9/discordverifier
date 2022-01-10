@@ -17,9 +17,9 @@ BotToken: "ENTER_YOUR_BOT_TOKEN_HERE" # Set here your bot token (read more https
 GuildID: "ENTER_YOUR_GUILD_ID_HERE" # Set here your Discord server ID (read more https://support.discord.com/hc/pl/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-)
 VerificationChannelID: "ENTER_YOUR_VERIFICATION_CHANNEL_ID_HERE" Set here your channel ID, that will be used for verification command(s?) (more ^^)
 Roles: # Here set groups with IDs of roles that should be added to the user, permission based, as below:
-  admin: "111111111111111111" # if player has permission group.admin, he will get Discord role with ID 111111111111111111
-  vip: "222222222222222222" # if player has permission group.vip, he will get Discord role with ID 222222222222222222
-  default: "333333333333333333" # if player has permission group.default, he will get Discord role with ID 333333333333333333
+  admin: "111111111111111111" # If player has permission group.admin, he will get Discord role with ID 111111111111111111
+  vip: "222222222222222222" # If player has permission group.vip, he will get Discord role with ID 222222222222222222
+  default: "333333333333333333" # If player has permission group.default, he will get Discord role with ID 333333333333333333
 ```
 Other of them are based on your preferences. There are used custom hex based color codes used in chat messages.
 
@@ -27,6 +27,7 @@ Other of them are based on your preferences. There are used custom hex based col
 DeleteMessageAfter: 10 # The time in seconds after which the bot will delete all messages (the useful ones, other are deleted immediately)
 VerificationExpireAfter: 120 # The time in seconds after which the verification will expire
 LimitRolesToOne: true # If only one, the highest placed role should be assigned to the user
+ForceNicknamesOnDiscord: true # If true, users names on Discord will be synchronized with nicknames on the server
 ```
 
 Colors

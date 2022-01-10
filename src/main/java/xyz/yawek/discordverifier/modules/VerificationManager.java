@@ -83,6 +83,7 @@ public class VerificationManager {
         playerData.setDiscordName(verificationPlayers.get(player).getUser().getAsTag());
 
         updateRoles(player);
+        updateNickname(player);
 
         VelocityMessageUtils.sendMessageFromConfig(
                 player,
@@ -167,6 +168,20 @@ public class VerificationManager {
                     JDAManager.getRole(roles.get(s)
             ));
         }
+    }
+
+    public static void updateNickname(Player player) {
+        PlayerData playerData = new PlayerData(player.getUniqueId());
+
+        if (!playerData.isVerified()) {
+            return;
+        }
+
+        if (!VelocityConfigManager.getBoolean("ForceNicknamesOnDiscord")) {
+            return;
+        }
+
+        JDAManager.setNickname(JDAManager.getMemberById(playerData.getDiscordId()), player.getUsername());
     }
 
     private static <K, V> K getKey(Map<K, V> map, V value) {
