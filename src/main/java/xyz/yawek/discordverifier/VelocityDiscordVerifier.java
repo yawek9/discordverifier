@@ -18,11 +18,11 @@ import xyz.yawek.discordverifier.modules.VelocityConfigManager;
 
 import java.nio.file.Path;
 
-@Plugin(id = "discordverifier", name = "VelocityDiscordVerifier", version = "1.0",
+@Plugin(id = "discordverifier", name = "DiscordVerifier", version = "1.0.1",
         url = "https://axmc.pl", description = "Done", authors = {"yawek9"})
 public class VelocityDiscordVerifier {
 
-    public static final String VERSION = "1.0.0";
+    public static final String VERSION = "1.0.1";
 
     private static VelocityDiscordVerifier plugin;
     private static Logger logger;
