@@ -19,6 +19,7 @@ public class MySQLDataAccess {
         hikari.addDataSourceProperty("databaseName", VelocityConfigManager.getString("DatabaseName"));
         hikari.addDataSourceProperty("user", VelocityConfigManager.getString("DatabaseUser"));
         hikari.addDataSourceProperty("password", VelocityConfigManager.getString("DatabasePassword"));
+        hikari.setPoolName("discordverifier-hikari");
 
         try (Connection connection = hikari.getConnection()) {
             if (connection != null) {

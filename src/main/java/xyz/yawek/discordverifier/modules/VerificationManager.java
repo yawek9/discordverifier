@@ -82,6 +82,8 @@ public class VerificationManager {
         playerData.setDiscordId(verificationPlayers.get(player).getId());
         playerData.setDiscordName(verificationPlayers.get(player).getUser().getAsTag());
 
+        updateRoles(player);
+
         VelocityMessageUtils.sendMessageFromConfig(
                 player,
                 "VerifiedSuccessfully",
@@ -110,13 +112,13 @@ public class VerificationManager {
         }
 
         LinkedHashMap<String, String> groupsRoles =
-                (LinkedHashMap<String, String>) VelocityConfigManager.getMap("Roles").keySet();
+                (LinkedHashMap<String, String>) VelocityConfigManager.getMap("Roles");
 
         List<Role> roles = new ArrayList<>();
         LinkedList<Role> sortedRoles = new LinkedList<>();
 
-        for (String s : VelocityConfigManager.getMap("Roles").keySet()) {
-            roles.add(JDAManager.getRole(s));
+        for (String s : groupsRoles.keySet()) {
+            roles.add(JDAManager.getRole(groupsRoles.get(s)));
         }
 
         int index1 = 0;
@@ -156,10 +158,14 @@ public class VerificationManager {
     public static void removeRoles(Player player) {
         PlayerData playerData = new PlayerData(player.getUniqueId());
 
-        LinkedHashMap<String, String> roles = (LinkedHashMap<String, String>) VelocityConfigManager.getMap("Roles");
+        LinkedHashMap<String, String> roles =
+                (LinkedHashMap<String, String>) VelocityConfigManager.getMap("Roles");
 
         for (String s : roles.keySet()) {
-            JDAManager.removeRole(JDAManager.getMemberById(playerData.getDiscordId()), JDAManager.getRole(s));
+            JDAManager.removeRole(JDAManager.getMemberById(
+                    playerData.getDiscordId()),
+                    JDAManager.getRole(roles.get(s)
+            ));
         }
     }
 
