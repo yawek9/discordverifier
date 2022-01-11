@@ -1,6 +1,8 @@
 package xyz.yawek.discordverifier.utils;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextReplacementConfig;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -16,7 +18,7 @@ public class ColorUtils {
 
     public static Component decorate(Component component) {
         if (!PlainTextComponentSerializer.plainText().serialize(component).contains("&")) {
-            return component;
+            return makeUrlsClickable(component);
         }
 
         try {
@@ -112,7 +114,9 @@ public class ColorUtils {
                                 to = Color.decode("#" + decorationMatcherGradient.group(1));
                             }
                         }
-                        if (from == null || to == null) return output.append(Component.text(notReplaced));
+                        if (from == null || to == null) return makeUrlsClickable(
+                                output.append(Component.text(notReplaced))
+                        );
 
                         double[] red = interpolate(from.getRed(), to.getRed(), s.length());
                         double[] green = interpolate(from.getGreen(), to.getGreen(), s.length());
@@ -158,7 +162,9 @@ public class ColorUtils {
                                 to = Color.decode("#" + decorationMatcher.group(1));
                             }
                         }
-                        if (from == null || to == null) return output.append(Component.text(notReplaced));
+                        if (from == null || to == null) return makeUrlsClickable(
+                                output.append(Component.text(notReplaced))
+                        );
 
                         double[] red = interpolate(from.getRed(), to.getRed(), s.length());
                         double[] green = interpolate(from.getGreen(), to.getGreen(), s.length());
@@ -206,11 +212,25 @@ public class ColorUtils {
                 }
                 i++;
             }
-            return output;
+
+            return makeUrlsClickable(output);
         } catch (Exception e) {
             e.printStackTrace();
-            return component;
+            return makeUrlsClickable(component);
         }
+    }
+
+    public static Component makeUrlsClickable(Component component) {
+        Pattern urlPattern = Pattern.compile(
+                "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\." +
+                        "[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)"
+        );
+
+        TextReplacementConfig textReplacementConfig = TextReplacementConfig.builder()
+                .replacement((matchResult, builder) -> Component.text(matchResult.group())
+                        .clickEvent(ClickEvent.openUrl(matchResult.group()))).match(urlPattern).build();
+
+        return component.replaceText(textReplacementConfig);
     }
 
     public String stripColor(String string) {
