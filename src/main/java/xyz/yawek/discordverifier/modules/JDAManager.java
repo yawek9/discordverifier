@@ -98,6 +98,7 @@ public class JDAManager {
     public static void removeRole(Member member, Role role) {
         try {
             Guild guild = jda.getGuildById(VelocityConfigManager.getString("GuildID"));
+            if (member == null) return;
             guild.removeRoleFromMember(member, role).queue();
         } catch (NullPointerException e) {
             VelocityDiscordVerifier.getLogger().error("Role with ID " + role.getId() + " does not exists.");
@@ -113,6 +114,7 @@ public class JDAManager {
     }
 
     public static void setNickname(Member member, String nickname) {
+        if (member == null) return;
         member.modifyNickname(nickname).queue();
     }
     

@@ -2,8 +2,10 @@ package xyz.yawek.discordverifier.modules;
 
 import com.velocitypowered.api.permission.Tristate;
 import com.velocitypowered.api.proxy.Player;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
+import org.checkerframework.checker.units.qual.K;
 import xyz.yawek.discordverifier.VelocityDiscordVerifier;
 import xyz.yawek.discordverifier.player.PlayerData;
 import xyz.yawek.discordverifier.utils.VelocityMessageUtils;
@@ -181,7 +183,11 @@ public class VerificationManager {
             return;
         }
 
-        JDAManager.setNickname(JDAManager.getMemberById(playerData.getDiscordId()), player.getUsername());
+        if (JDAManager.getMemberById(playerData.getDiscordId()) == null) return;
+
+        if (JDAManager.getMemberById(playerData.getDiscordId()).getPermissions().contains(Permission.ADMINISTRATOR)) {
+            JDAManager.setNickname(JDAManager.getMemberById(playerData.getDiscordId()), player.getUsername());
+        }
     }
 
     private static <K, V> K getKey(Map<K, V> map, V value) {
