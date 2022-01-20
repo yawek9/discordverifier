@@ -33,7 +33,7 @@ public class MySQLDataAccess {
                           last_nickname varchar(100) DEFAULT NULL,
                           verified tinyint(1) DEFAULT 0,
                           discord_id varchar(100) DEFAULT NULL,
-                          version varchar(20) DEFAULT "1.0.2",
+                          version varchar(20) DEFAULT "1.0.3",
                           PRIMARY KEY (UUID)
                         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;""";
 
