@@ -185,7 +185,7 @@ public class VerificationManager {
 
         if (JDAManager.getMemberById(playerData.getDiscordId()) == null) return;
 
-        if (JDAManager.getMemberById(playerData.getDiscordId()).getPermissions().contains(Permission.ADMINISTRATOR)) {
+        if (!JDAManager.getMemberById(playerData.getDiscordId()).getPermissions().contains(Permission.ADMINISTRATOR)) {
             JDAManager.setNickname(JDAManager.getMemberById(playerData.getDiscordId()), player.getUsername());
         }
     }
