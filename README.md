@@ -2,6 +2,11 @@
 
 Simple Velocity server proxy plugin that links server groups to the Discord roles. Inspired by https://github.com/StaticFX/DiscordBotBungee.
 
+# Requirements
+- Java 17
+- MySQL database
+- Discord bot with enabled intents
+
 # Config
 
 After first startup, you have to stop the server and fill generated config with correct data. 
