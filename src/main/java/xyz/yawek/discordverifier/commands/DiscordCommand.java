@@ -8,6 +8,11 @@ import xyz.yawek.discordverifier.modules.VerificationManager;
 import xyz.yawek.discordverifier.player.PlayerData;
 import xyz.yawek.discordverifier.utils.VelocityMessageUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 public class DiscordCommand implements SimpleCommand {
 
     @Override
@@ -142,6 +147,28 @@ public class DiscordCommand implements SimpleCommand {
     @Override
     public boolean hasPermission(final Invocation invocation) {
         return invocation.source().hasPermission("discordverifier.discord");
+    }
+
+    @Override
+    public CompletableFuture<List<String>> suggestAsync(Invocation invocation) {
+        CommandSource source = invocation.source();
+        String[] args = invocation.arguments();
+
+        List<String> firstArguments = new ArrayList<>();
+
+        if (source.hasPermission("discordverifier.admin")) {
+            firstArguments.add("reload");
+        } else {
+            firstArguments.add("accept");
+            firstArguments.add("deny");
+            firstArguments.add("unlink");
+        }
+
+        if (args.length == 1) {
+            return CompletableFuture.completedFuture(firstArguments);
+        } else {
+            return CompletableFuture.completedFuture(Collections.emptyList());
+        }
     }
 
 }
