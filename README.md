@@ -57,4 +57,8 @@ Permission for the player commands is 'discordverifier.discord'. Also for the ad
 After setting everything up and enabling the servers, if all is configured well, you can try to get verified. 
 To do this, enter the server and type in verify channel "!verify (your nickname)". 
 After that, you will see a message on the server in game, that you can accept verification typing /discord accept or reject it by /discord deny command.
-If you accepted id and did everything right, roles set in config.yml should be assigned to you.
+If you accepted it and did everything right, roles set in config.yml should be assigned to you.
+
+# Help
+
+If you want to get some help or report bugs, join the Discord server: https://discord.gg/cpY2Qcjjcz.
