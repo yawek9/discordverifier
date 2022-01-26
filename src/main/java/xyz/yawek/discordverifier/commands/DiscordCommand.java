@@ -69,6 +69,37 @@ public class DiscordCommand implements SimpleCommand {
 
         if (source.hasPermission("discordverifier.admin")) {
             if (args.length < 2) {
+                if (args.length == 1) {
+                    if (args[0].equalsIgnoreCase("accept")) {
+                        VerificationManager.completeVerificationProcess((Player) source, true);
+                        return;
+                    }
+
+                    if (args[0].equalsIgnoreCase("deny")) {
+                        VerificationManager.completeVerificationProcess((Player) source, false);
+                        return;
+                    }
+
+                    if (args[0].equalsIgnoreCase("unlink")) {
+                        PlayerData playerData = new PlayerData(((Player) source).getUniqueId());
+
+                        if (playerData.getDiscordId() == null) {
+                            VelocityMessageUtils.sendMessageFromConfig(source, "NotVerified", true);
+                            return;
+                        }
+
+                        VerificationManager.removeRoles((Player) source);
+
+                        playerData.setVerified(false);
+                        playerData.setDiscordName(null);
+                        playerData.setDiscordId(null);
+
+                        VelocityMessageUtils.sendMessageFromConfig(source, "UnverifiedSuccesfully", true);
+
+                        return;
+                    }
+                }
+
                 VelocityMessageUtils.sendMessageFromConfig(source, "AdminCommandUsage", true);
                 return;
             }
@@ -156,12 +187,12 @@ public class DiscordCommand implements SimpleCommand {
 
         List<String> firstArguments = new ArrayList<>();
 
+        firstArguments.add("accept");
+        firstArguments.add("deny");
+        firstArguments.add("unlink");
+
         if (source.hasPermission("discordverifier.admin")) {
             firstArguments.add("reload");
-        } else {
-            firstArguments.add("accept");
-            firstArguments.add("deny");
-            firstArguments.add("unlink");
         }
 
         if (args.length == 1) {
