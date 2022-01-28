@@ -5,7 +5,6 @@ import com.velocitypowered.api.proxy.Player;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
-import org.checkerframework.checker.units.qual.K;
 import xyz.yawek.discordverifier.VelocityDiscordVerifier;
 import xyz.yawek.discordverifier.player.PlayerData;
 import xyz.yawek.discordverifier.utils.VelocityMessageUtils;
@@ -110,9 +109,11 @@ public class VerificationManager {
     public static void updateRoles(Player player) {
         PlayerData playerData = new PlayerData(player.getUniqueId());
 
-        if (!playerData.isVerified()) {
-            return;
-        }
+        if (!playerData.isVerified()) return;
+
+        Member member = JDAManager.getMemberById(playerData.getDiscordId());
+
+        if (member == null) return;
 
         LinkedHashMap<String, String> groupsRoles =
                 (LinkedHashMap<String, String>) VelocityConfigManager.getMap("Roles");
@@ -150,10 +151,10 @@ public class VerificationManager {
         for (Role r : sortedRoles) {
             if (player.getPermissionValue("group." + getKey(groupsRoles, r.getId())).equals(Tristate.TRUE)
                     && (!roleAssigned || !VelocityConfigManager.getBoolean("LimitRolesToOne"))) {
-                JDAManager.addRole(JDAManager.getMemberById(playerData.getDiscordId()), r);
+                JDAManager.addRole(member, r);
                 roleAssigned = true;
             } else {
-                JDAManager.removeRole(JDAManager.getMemberById(playerData.getDiscordId()), r);
+                JDAManager.removeRole(member, r);
             }
         }
     }
