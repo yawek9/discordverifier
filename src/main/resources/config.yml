@@ -1,4 +1,4 @@
-UseMySQL: true
+UseMySQL: false
 DatabaseAddress: "localhost"
 DatabasePort: "3306"
 DatabaseName: "discordbot"

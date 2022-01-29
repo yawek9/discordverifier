@@ -11,8 +11,11 @@ public class DataManager {
     public static void setupDataManager() {
         if (VelocityConfigManager.getBoolean("UseMySQL")) {
             dataAccess = new MySQLDataAccess();
-            dataAccess.openDatabaseConnection();
+        } else {
+            dataAccess = new SQLiteDataAccess();
         }
+
+        dataAccess.openDatabaseConnection();
     }
 
     public static void shutdownDataManager() {
