@@ -10,7 +10,7 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import org.slf4j.Logger;
 import xyz.yawek.discordverifier.commands.DiscordCommand;
-import xyz.yawek.discordverifier.data.MySQLDataAccess;
+import xyz.yawek.discordverifier.data.DataManager;
 import xyz.yawek.discordverifier.discordlisteners.MessageReceivedListener;
 import xyz.yawek.discordverifier.listeners.LoginListener;
 import xyz.yawek.discordverifier.modules.JDAManager;
@@ -42,7 +42,7 @@ public class VelocityDiscordVerifier {
 
         VelocityConfigManager.loadConfig();
 
-        MySQLDataAccess.openDatabaseConnection();
+        DataManager.setupDataManager();
 
         server.getEventManager().register(this, new LoginListener());
 
@@ -56,7 +56,7 @@ public class VelocityDiscordVerifier {
 
     @Subscribe
     public void onShutdown(ProxyShutdownEvent e) {
-        MySQLDataAccess.closeDatabaseConnection();
+        DataManager.shutdownDataManager();
     }
 
     public static ProxyServer getServer() {

@@ -1,7 +1,7 @@
 package xyz.yawek.discordverifier.player;
 
 import xyz.yawek.discordverifier.VelocityDiscordVerifier;
-import xyz.yawek.discordverifier.data.MySQLDataAccess;
+import xyz.yawek.discordverifier.data.DataManager;
 import xyz.yawek.discordverifier.modules.JDAManager;
 
 import java.util.UUID;
@@ -18,13 +18,13 @@ public class PlayerData {
     public PlayerData(UUID uuid) {
         this.uuid = uuid;
 
-        lastNickname = MySQLDataAccess.getNickname(uuid);
-        verified = MySQLDataAccess.isVerified(uuid);
+        lastNickname = DataManager.getNickname(uuid);
+        verified = DataManager.isVerified(uuid);
 
         online = VelocityDiscordVerifier.getServer().getPlayer(lastNickname).isPresent();
 
         if (verified) {
-            discordId = MySQLDataAccess.getDiscordId(uuid);
+            discordId = DataManager.getDiscordId(uuid);
             discordName = JDAManager.getDiscordName(discordId);
         }
     }
@@ -32,15 +32,15 @@ public class PlayerData {
     public PlayerData(String lastNickname) {
         this.lastNickname = lastNickname;
 
-        uuid = MySQLDataAccess.getUUID(lastNickname);
+        uuid = DataManager.getUUID(lastNickname);
         if (uuid != null) {
-            verified = MySQLDataAccess.isVerified(uuid);
+            verified = DataManager.isVerified(uuid);
         }
 
         online = VelocityDiscordVerifier.getServer().getPlayer(lastNickname).isPresent();
 
         if (verified) {
-            discordId = MySQLDataAccess.getDiscordId(uuid);
+            discordId = DataManager.getDiscordId(uuid);
             discordName = JDAManager.getDiscordName(discordId);
         }
     }
@@ -52,7 +52,7 @@ public class PlayerData {
     public void setUUID(UUID uuid) {
         this.uuid = uuid;
 
-        MySQLDataAccess.setUUID(lastNickname, uuid);
+        DataManager.setUUID(lastNickname, uuid);
     }
 
     public String getLastNickname() {
@@ -62,7 +62,7 @@ public class PlayerData {
     public void setLastNickname(String lastNickname) {
         this.lastNickname = lastNickname;
 
-        MySQLDataAccess.setNickname(uuid, lastNickname);
+        DataManager.setNickname(uuid, lastNickname);
     }
 
     public boolean isVerified() {
@@ -73,9 +73,9 @@ public class PlayerData {
         this.verified = verified;
 
         if (verified) {
-            MySQLDataAccess.setVerified(uuid);
+            DataManager.setVerified(uuid);
         } else {
-            MySQLDataAccess.setUnVerified(uuid);
+            DataManager.setUnVerified(uuid);
         }
     }
 
@@ -86,7 +86,7 @@ public class PlayerData {
     public void setDiscordId(String discordId) {
         this.discordId = discordId;
 
-        MySQLDataAccess.setDiscordId(uuid, discordId);
+        DataManager.setDiscordId(uuid, discordId);
     }
 
     public String getDiscordName() {

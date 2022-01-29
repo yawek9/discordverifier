@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import xyz.yawek.discordverifier.VelocityDiscordVerifier;
-import xyz.yawek.discordverifier.data.MySQLDataAccess;
+import xyz.yawek.discordverifier.data.DataManager;
 import xyz.yawek.discordverifier.modules.JDAManager;
 import xyz.yawek.discordverifier.modules.VelocityConfigManager;
 import xyz.yawek.discordverifier.modules.VerificationManager;
@@ -73,7 +73,7 @@ public class MessageReceivedListener extends ListenerAdapter {
             return;
         }
 
-        if (MySQLDataAccess.isVerified(e.getMember().getId())) {
+        if (DataManager.isVerified(e.getMember().getId())) {
             JDAManager.sendEmbedMessage(
                     e.getTextChannel(),
                     VelocityConfigManager.getString("DiscordAlreadyVerifiedTitle"),

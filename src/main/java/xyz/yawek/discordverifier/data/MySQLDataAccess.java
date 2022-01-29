@@ -7,11 +7,12 @@ import xyz.yawek.discordverifier.modules.VelocityConfigManager;
 import java.sql.*;
 import java.util.UUID;
 
-public class MySQLDataAccess {
+public class MySQLDataAccess extends DataAccess {
 
-    private static HikariDataSource hikari;
+    private HikariDataSource hikari;
 
-    public static void openDatabaseConnection() {
+    @Override
+    public void openDatabaseConnection() {
         hikari = new HikariDataSource();
         hikari.setDataSourceClassName("com.mysql.cj.jdbc.MysqlDataSource");
         hikari.addDataSourceProperty("serverName", VelocityConfigManager.getString("DatabaseAddress"));
@@ -47,13 +48,15 @@ public class MySQLDataAccess {
         }
     }
 
-    public static void closeDatabaseConnection() {
+    @Override
+    public void closeDatabaseConnection() {
         hikari.close();
         VelocityDiscordVerifier.getLogger()
                 .info("Closed MySQL connection.");
     }
 
-    public static String getNickname(UUID uuid) {
+    @Override
+    public String getNickname(UUID uuid) {
         try (Connection connection = hikari.getConnection()) {
             String sql = "SELECT last_nickname FROM players WHERE uuid = ?";
 
@@ -78,7 +81,8 @@ public class MySQLDataAccess {
         }
     }
 
-    public static void setNickname(UUID uuid, String nickname) {
+    @Override
+    public void setNickname(UUID uuid, String nickname) {
         try (Connection connection = hikari.getConnection()) {
             String sql = "UPDATE players SET last_nickname = ? WHERE uuid = ?";
 
@@ -96,7 +100,8 @@ public class MySQLDataAccess {
         }
     }
 
-    public static UUID getUUID(String nickname) {
+    @Override
+    public UUID getUUID(String nickname) {
         try (Connection connection = hikari.getConnection()) {
             String sql = "SELECT uuid FROM players WHERE last_nickname = ?";
 
@@ -121,7 +126,8 @@ public class MySQLDataAccess {
         }
     }
 
-    public static void setUUID(String nickname, UUID uuid) {
+    @Override
+    public void setUUID(String nickname, UUID uuid) {
         try (Connection connection = hikari.getConnection()) {
             String sql = "UPDATE players SET uuid = ? WHERE last_nickname = ?";
 
@@ -138,7 +144,8 @@ public class MySQLDataAccess {
         }
     }
 
-    public static void setVerified(UUID uuid) {
+    @Override
+    public void setVerified(UUID uuid) {
         try (Connection connection = hikari.getConnection()) {
             String sql = "UPDATE players SET verified = true WHERE uuid = ?";
 
@@ -154,7 +161,8 @@ public class MySQLDataAccess {
         }
     }
 
-    public static void setUnVerified(UUID uuid) {
+    @Override
+    public void setUnVerified(UUID uuid) {
         try (Connection connection = hikari.getConnection()) {
             String sql = "UPDATE players SET verified = false WHERE uuid = ?";
 
@@ -170,7 +178,8 @@ public class MySQLDataAccess {
         }
     }
 
-    public static boolean isVerified(UUID uuid) {
+    @Override
+    public boolean isVerified(UUID uuid) {
         try (Connection connection = hikari.getConnection()) {
             String sql = "SELECT verified FROM players WHERE uuid = ?";
 
@@ -195,49 +204,8 @@ public class MySQLDataAccess {
         }
     }
 
-    public static String getDiscordId(UUID uuid) {
-        try (Connection connection = hikari.getConnection()) {
-            String sql = "SELECT discord_id FROM players WHERE uuid = ?";
-
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
-            preparedStatement.setString(1, uuid.toString());
-
-            preparedStatement.execute();
-
-            ResultSet resultSet = preparedStatement.getResultSet();
-
-            if (resultSet.next()) {
-                return resultSet.getString(1);
-            } else {
-                return null;
-            }
-        } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't get Discord ID for UUID " + uuid.toString() + ".");
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public static void setDiscordId(UUID uuid, String discordId) {
-        try (Connection connection = hikari.getConnection()) {
-            String sql = "UPDATE players SET discord_id = ? WHERE uuid = ?";
-
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
-            preparedStatement.setString(1, discordId);
-            preparedStatement.setString(2, uuid.toString());
-
-            preparedStatement.execute();
-        } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't set Discord ID for the player with UUID " + uuid + ".");
-            e.printStackTrace();
-        }
-    }
-
-    public static boolean isVerified(String memberId) {
+    @Override
+    public boolean isVerified(String memberId) {
         try (Connection connection = hikari.getConnection()) {
             String sql = "SELECT verified FROM players WHERE discord_id = ?";
 
@@ -262,7 +230,52 @@ public class MySQLDataAccess {
         }
     }
 
-    public static void createOrUpdatePlayerData(UUID uuid, String nickname) {
+    @Override
+    public String getDiscordId(UUID uuid) {
+        try (Connection connection = hikari.getConnection()) {
+            String sql = "SELECT discord_id FROM players WHERE uuid = ?";
+
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
+            preparedStatement.setString(1, uuid.toString());
+
+            preparedStatement.execute();
+
+            ResultSet resultSet = preparedStatement.getResultSet();
+
+            if (resultSet.next()) {
+                return resultSet.getString(1);
+            } else {
+                return null;
+            }
+        } catch (SQLException e) {
+            VelocityDiscordVerifier.getLogger()
+                    .error("Couldn't get Discord ID for UUID " + uuid.toString() + ".");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
+    public void setDiscordId(UUID uuid, String discordId) {
+        try (Connection connection = hikari.getConnection()) {
+            String sql = "UPDATE players SET discord_id = ? WHERE uuid = ?";
+
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
+            preparedStatement.setString(1, discordId);
+            preparedStatement.setString(2, uuid.toString());
+
+            preparedStatement.execute();
+        } catch (SQLException e) {
+            VelocityDiscordVerifier.getLogger()
+                    .error("Couldn't set Discord ID for the player with UUID " + uuid + ".");
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void createOrUpdatePlayerData(UUID uuid, String nickname) {
         if (!recordExists("players", "UUID", uuid.toString())) {
             try (Connection connection = hikari.getConnection()) {
                 String sql = "INSERT INTO players (uuid, last_nickname, version) VALUES (?, ?, ?)";
@@ -284,7 +297,7 @@ public class MySQLDataAccess {
         }
     }
 
-    private static boolean recordExists(String tableName, String recordName, String recordValue) {
+    private boolean recordExists(String tableName, String recordName, String recordValue) {
         try (Connection connection = hikari.getConnection()) {
             String query = "SELECT * FROM " + tableName + " WHERE " + recordName + " = \"" + recordValue + "\"";
 
