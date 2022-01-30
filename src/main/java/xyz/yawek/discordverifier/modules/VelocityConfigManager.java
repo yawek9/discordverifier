@@ -1,11 +1,14 @@
 package xyz.yawek.discordverifier.modules;
 
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import xyz.yawek.discordverifier.VelocityDiscordVerifier;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class VelocityConfigManager {
 
@@ -34,6 +37,46 @@ public class VelocityConfigManager {
             } catch (IOException e) {
                 plugin.getLogger().error("Couldn't create config file.");
                 e.printStackTrace();
+            }
+        } else {
+            try {
+                File file = new File(VelocityDiscordVerifier.getDataDirectory().toString(), "config.yml");
+
+                DumperOptions options = new DumperOptions();
+                options.setAllowUnicode(true);
+                options.setIndent(2);
+                options.setPrettyFlow(true);
+                options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+
+                Yaml yamlToWrite = new Yaml(options);
+
+                InputStream inputStream = new FileInputStream(file);
+                Map<String, Object> map = yamlToWrite.load(inputStream);
+
+                InputStream targetInputStream = plugin.getClass()
+                        .getClassLoader()
+                        .getResourceAsStream("config.yml");
+
+                Map<String, Object> targetMap = yamlToWrite.load(targetInputStream);
+
+                boolean update = false;
+
+                for (String s : targetMap.keySet()) {
+                    if (!map.containsKey(s)) {
+                        map.put(s, targetMap.get(s));
+                        update = true;
+                    }
+                }
+
+                if (update) {
+                    OutputStreamWriter writer =
+                            new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);
+
+                    yamlToWrite.dump(map, writer);
+                }
+            } catch (IOException exception) {
+                plugin.getLogger().error("Couldn't update config file.");
+                exception.printStackTrace();
             }
         }
 
