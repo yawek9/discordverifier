@@ -44,7 +44,7 @@ public class SQLiteDataAccess extends DataAccess {
                           last_nickname DEFAULT NULL,
                           verified DEFAULT 0,
                           discord_id DEFAULT NULL,
-                          version DEFAULT "1.0.3",
+                          version DEFAULT "1.0.4",
                           PRIMARY KEY (uuid)
                         )""";
 
