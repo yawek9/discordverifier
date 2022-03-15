@@ -34,7 +34,7 @@ public class MySQLDataAccess extends DataAccess {
                           last_nickname varchar(100) DEFAULT NULL,
                           verified tinyint(1) DEFAULT 0,
                           discord_id varchar(100) DEFAULT NULL,
-                          version varchar(20) DEFAULT "1.0.4",
+                          version varchar(20) DEFAULT "1.0.5",
                           PRIMARY KEY (uuid)
                         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;""";
 
