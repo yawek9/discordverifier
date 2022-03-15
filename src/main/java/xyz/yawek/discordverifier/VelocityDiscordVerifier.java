@@ -27,7 +27,7 @@ import java.nio.file.Path;
         description = "Simple Velocity Discord account linking plugin.",
         authors = {"yawek9"},
         dependencies = {
-            @Dependency(id ="luckperms")
+            @Dependency(id ="luckperms", optional = true)
         }
 )
 public class VelocityDiscordVerifier {
