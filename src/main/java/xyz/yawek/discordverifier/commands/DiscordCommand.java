@@ -66,7 +66,6 @@ public class DiscordCommand implements SimpleCommand {
             return;
         }
 
-
         if (source.hasPermission("discordverifier.admin")) {
             if (args.length < 2) {
                 if (args.length == 1) {

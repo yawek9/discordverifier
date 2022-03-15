@@ -34,6 +34,10 @@ public class DataManager {
         return dataAccess.getUUID(nickname);
     }
 
+    public static UUID getUUIDByDiscordId(String discordId) {
+        return dataAccess.getUUIDByDiscordId(discordId);
+    }
+
     public static void setUUID(String nickname, UUID uuid) {
         dataAccess.setUUID(nickname, uuid);
     }

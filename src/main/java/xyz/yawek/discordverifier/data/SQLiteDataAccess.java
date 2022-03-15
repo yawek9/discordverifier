@@ -18,7 +18,7 @@ public class SQLiteDataAccess extends DataAccess {
                 VelocityDiscordVerifier.getDataDirectory().toFile().mkdirs();
             }
 
-            File databaseFile = new File(VelocityDiscordVerifier.getDataDirectory().toString(), "auctions.db");
+            File databaseFile = new File(VelocityDiscordVerifier.getDataDirectory().toString(), "data.db");
 
             if(!databaseFile.exists()) {
                 try {
@@ -133,6 +133,30 @@ public class SQLiteDataAccess extends DataAccess {
         } catch (SQLException e) {
             VelocityDiscordVerifier.getLogger()
                     .error("Couldn't get UUID for nickname " + nickname + ".");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
+    public UUID getUUIDByDiscordId(String discordId) {
+        try {
+            String sql = "SELECT uuid FROM players WHERE discord_id = ?";
+
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
+            preparedStatement.setString(1, discordId);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                return UUID.fromString(resultSet.getString(1));
+            } else {
+                return null;
+            }
+        } catch (SQLException e) {
+            VelocityDiscordVerifier.getLogger()
+                    .error("Couldn't get UUID for Discord ID " + discordId + ".");
             e.printStackTrace();
             return null;
         }

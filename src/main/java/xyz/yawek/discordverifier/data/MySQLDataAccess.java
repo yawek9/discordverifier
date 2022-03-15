@@ -127,6 +127,32 @@ public class MySQLDataAccess extends DataAccess {
     }
 
     @Override
+    public UUID getUUIDByDiscordId(String discordId) {
+        try (Connection connection = hikari.getConnection()) {
+            String sql = "SELECT uuid FROM players WHERE discord_id = ?";
+
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
+            preparedStatement.setString(1, discordId);
+
+            preparedStatement.execute();
+
+            ResultSet resultSet = preparedStatement.getResultSet();
+
+            if (resultSet.next()) {
+                return UUID.fromString(resultSet.getString(1));
+            } else {
+                return null;
+            }
+        } catch (SQLException e) {
+            VelocityDiscordVerifier.getLogger()
+                    .error("Couldn't get UUID for Discord ID " + discordId + ".");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
     public void setUUID(String nickname, UUID uuid) {
         try (Connection connection = hikari.getConnection()) {
             String sql = "UPDATE players SET uuid = ? WHERE last_nickname = ?";

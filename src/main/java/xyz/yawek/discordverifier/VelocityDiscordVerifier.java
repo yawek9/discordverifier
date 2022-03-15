@@ -5,6 +5,7 @@ import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
+import com.velocitypowered.api.plugin.Dependency;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -14,12 +15,21 @@ import xyz.yawek.discordverifier.data.DataManager;
 import xyz.yawek.discordverifier.discordlisteners.MessageReceivedListener;
 import xyz.yawek.discordverifier.listeners.LoginListener;
 import xyz.yawek.discordverifier.modules.JDAManager;
+import xyz.yawek.discordverifier.modules.LuckPermsModule;
 import xyz.yawek.discordverifier.modules.VelocityConfigManager;
 
 import java.nio.file.Path;
 
-@Plugin(id = "discordverifier", name = "DiscordVerifier", version = "1.0.4", url = "https://yawek.xyz",
-        description = "Simple Velocity Discord account linking plugin.", authors = {"yawek9"})
+@Plugin(id = "discordverifier",
+        name = "DiscordVerifier",
+        version = "1.0.4",
+        url = "https://yawek.xyz",
+        description = "Simple Velocity Discord account linking plugin.",
+        authors = {"yawek9"},
+        dependencies = {
+            @Dependency(id ="luckperms")
+        }
+)
 public class VelocityDiscordVerifier {
 
     public static final String VERSION = "1.0.4";
@@ -52,6 +62,8 @@ public class VelocityDiscordVerifier {
 
         JDAManager.initializeJda();
         JDAManager.addEventListener(new MessageReceivedListener());
+
+        LuckPermsModule.loadLuckPerms();
     }
 
     @Subscribe

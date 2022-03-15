@@ -14,6 +14,8 @@ public abstract class DataAccess {
 
     public abstract UUID getUUID(String nickname);
 
+    public abstract UUID getUUIDByDiscordId(String discordId);
+
     public abstract void setUUID(String nickname, UUID uuid);
 
     public abstract void setVerified(UUID uuid);

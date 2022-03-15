@@ -6,8 +6,12 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import xyz.yawek.discordverifier.VelocityDiscordVerifier;
+import xyz.yawek.discordverifier.data.DataManager;
+import xyz.yawek.discordverifier.player.PlayerData;
 
 import javax.security.auth.login.LoginException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JDAManager {
 
@@ -116,6 +120,19 @@ public class JDAManager {
     public static void setNickname(Member member, String nickname) {
         if (member == null) return;
         member.modifyNickname(nickname).queue();
+    }
+
+    public static List<PlayerData> getPlayersWithRole(String roleId) {
+        List<Member> members = jda.getGuildById(GUILD_ID).getMembersWithRoles(getRole(roleId));
+
+        List<PlayerData> playersData = new ArrayList<>();
+
+        for (Member member : members) {
+            if (DataManager.getUUIDByDiscordId(member.getId()) == null) continue;
+            playersData.add(new PlayerData(DataManager.getUUIDByDiscordId(member.getId())));
+        }
+
+        return playersData;
     }
     
 }
