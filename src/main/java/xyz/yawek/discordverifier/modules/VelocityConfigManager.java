@@ -1,3 +1,21 @@
+/*
+ * This file is part of DiscordVerifier, licensed under GNU GPLv3 license.
+ * Copyright (C) 2022 yawek9
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package xyz.yawek.discordverifier.modules;
 
 import org.yaml.snakeyaml.DumperOptions;
@@ -17,11 +35,11 @@ public class VelocityConfigManager {
     public static void loadConfig() {
         VelocityDiscordVerifier plugin = VelocityDiscordVerifier.getInstance();
 
-        if (!plugin.getDataDirectory().toFile().exists()) plugin.getDataDirectory().toFile().mkdirs();
+        if (!VelocityDiscordVerifier.getDataDirectory().toFile().exists()) plugin.getDataDirectory().toFile().mkdirs();
 
         Yaml yaml = new Yaml();
 
-        File configFile = new File(plugin.getDataDirectory().toString(), "config.yml");
+        File configFile = new File(VelocityDiscordVerifier.getDataDirectory().toString(), "config.yml");
 
         if (!configFile.exists()) {
             InputStream inputStream = plugin.getClass()
@@ -35,7 +53,7 @@ public class VelocityConfigManager {
                     outputStream.write(bytes, 0, read);
                 }
             } catch (IOException e) {
-                plugin.getLogger().error("Couldn't create config file.");
+                VelocityDiscordVerifier.getLogger().error("Couldn't create config file.");
                 e.printStackTrace();
             }
         } else {
@@ -75,7 +93,7 @@ public class VelocityConfigManager {
                     yamlToWrite.dump(map, writer);
                 }
             } catch (IOException exception) {
-                plugin.getLogger().error("Couldn't update config file.");
+                VelocityDiscordVerifier.getLogger().error("Couldn't update config file.");
                 exception.printStackTrace();
             }
         }
@@ -83,7 +101,7 @@ public class VelocityConfigManager {
         try {
             config = new HashMap<>(yaml.load(new FileInputStream(configFile)));
         } catch (FileNotFoundException e) {
-            plugin.getLogger().error("Couldn't load config file.");
+            VelocityDiscordVerifier.getLogger().error("Couldn't load config file.");
             e.printStackTrace();
         }
     }
