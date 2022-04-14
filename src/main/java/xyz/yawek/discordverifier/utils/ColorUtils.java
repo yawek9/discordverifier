@@ -41,7 +41,7 @@ public class ColorUtils {
         Pattern colorOrGradientPattern = Pattern
                 .compile("(&#gr#[A-Fa-f0-9]{6}#[A-Fa-f0-9]{6})|(&#[A-Fa-f0-9]{6})");
         Matcher colorOrGradientMatcher = colorOrGradientPattern.matcher(stringInput);
-        Pattern nextTextPattern = Pattern.compile(".+?(?=&#)");
+        Pattern nextTextPattern = Pattern.compile(".+?(?=&#)", Pattern.DOTALL);
         while (colorOrGradientMatcher.find()) {
             String group = colorOrGradientMatcher.group();
             boolean isGradient = group.length() > 10;
