@@ -64,7 +64,7 @@ public class ColorUtils {
                     continue;
                 }
                 TextDecoration decoration = retrieveDecoration(toGradient);
-                stringInput = stringInput.replaceFirst(toGradient, "");
+                stringInput = stringInput.replaceFirst(Pattern.quote(toGradient), "");
                 outputBuilder.append(makeGradient(
                         retrieveFirstColor(gradientGroup),
                         retrieveFirstColor(gradientGroup.replaceFirst("#[A-Fa-f0-9]{6}", "")),
@@ -92,7 +92,7 @@ public class ColorUtils {
                         .color(TextColor.fromHexString(colorGroup.replace("&", "")));
                 if (decoration != null) toAppend = toAppend.decorate(decoration);
                 outputBuilder.append(toAppend);
-                stringInput = stringInput.replaceFirst(toColor, "");
+                stringInput = stringInput.replaceFirst(Pattern.quote(toColor), "");
             }
         }
         return makeUrlsClickable(outputBuilder.build());
