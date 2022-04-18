@@ -33,6 +33,12 @@
                             <minimizeJar>true</minimizeJar>
                             <filters>
                                 <filter>
+                                    <artifact>mysql:mysql-connector-java</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
                                     <artifact>org.xerial:sqlite-jdbc</artifact>
                                     <includes>
                                         <include>**</include>
