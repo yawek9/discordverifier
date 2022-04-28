@@ -18,44 +18,43 @@
 
 package xyz.yawek.discordverifier.data;
 
-import xyz.yawek.discordverifier.VelocityDiscordVerifier;
+import xyz.yawek.discordverifier.DiscordVerifier;
+import xyz.yawek.discordverifier.utils.LogUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.sql.*;
 import java.util.UUID;
 
-public class SQLiteDataAccess extends DataAccess {
+public class SQLiteDataAccess implements DataAccess {
 
+    private final DiscordVerifier verifier;
     private Connection connection;
+
+    public SQLiteDataAccess(DiscordVerifier verifier) {
+        this.verifier = verifier;
+    }
 
     @Override
     public void openDatabaseConnection() {
+        Path directory = verifier.getDataDirectory();
+
         try {
-            if (!VelocityDiscordVerifier.getDataDirectory().toFile().exists()) {
-                VelocityDiscordVerifier.getDataDirectory().toFile().mkdirs();
+            if (!directory.toFile().exists()) {
+                directory.toFile().mkdirs();
             }
-
-            File databaseFile = new File(VelocityDiscordVerifier.getDataDirectory().toString(), "data.db");
-
-            if(!databaseFile.exists()) {
+            File databaseFile = new File(directory.toString(), "data.db");
+            if (!databaseFile.exists()) {
                 try {
                     databaseFile.createNewFile();
                 } catch (IOException e) {
-                    VelocityDiscordVerifier.getLogger().error("Couldn't create SQLite database file!");
+                    LogUtils.errorDataAccess("Unable to create SQLite database file.");
                     e.printStackTrace();
                 }
             }
-
             Class.forName("org.sqlite.JDBC");
-
             connection = DriverManager.getConnection("jdbc:sqlite:" + databaseFile);
-
-            if (connection != null) {
-                VelocityDiscordVerifier.getLogger()
-                        .info("Successfully connected to the SQLite database.");
-            }
-
             String sql = """
                         CREATE TABLE IF NOT EXISTS players (
                           uuid NOT NULL,
@@ -65,13 +64,11 @@ public class SQLiteDataAccess extends DataAccess {
                           version DEFAULT "1.0.6",
                           PRIMARY KEY (uuid)
                         )""";
-
             Statement statement = connection.createStatement();
-
             statement.execute(sql);
+            LogUtils.infoDataAccess("Successfully connected to the SQLite database.");
         } catch (Exception e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't connect to SQLite database.");
+            LogUtils.errorDataAccess("Unable to connect to the SQLite database.");
             e.printStackTrace();
         }
     }
@@ -79,11 +76,11 @@ public class SQLiteDataAccess extends DataAccess {
     @Override
     public void closeDatabaseConnection() {
         try {
-            if (connection != null) {
-                connection.close();
-
-                VelocityDiscordVerifier.getLogger().info("SQLite connection closed.");
+            if (connection == null) {
+                return;
             }
+            connection.close();
+            LogUtils.infoDataAccess("SQLite connection closed.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -93,21 +90,12 @@ public class SQLiteDataAccess extends DataAccess {
     public String getNickname(UUID uuid) {
         try {
             String sql = "SELECT last_nickname FROM players WHERE uuid = ?";
-
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
             preparedStatement.setString(1, uuid.toString());
-
             ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                return resultSet.getString(1);
-            } else {
-                return null;
-            }
+            return resultSet.next() ? resultSet.getString(1) : null;
         } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't get last_nickname for uuid " + uuid.toString() + ".");
+            LogUtils.errorDataAccess("Unable to get last nickname for uuid {}.", uuid.toString());
             e.printStackTrace();
             return null;
         }
@@ -117,64 +105,43 @@ public class SQLiteDataAccess extends DataAccess {
     public void setNickname(UUID uuid, String nickname) {
         try {
             String sql = "UPDATE players SET last_nickname = ? WHERE uuid = ?";
-
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
             preparedStatement.setString(1, nickname);
             preparedStatement.setString(2, uuid.toString());
-
             preparedStatement.execute();
         } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't set last_nickname for the player with UUID "
-                            + uuid + " and nickname " + nickname + ".");
+            LogUtils.errorDataAccess("Unable to set last nickname for the player " +
+                    "with UUID {} and nickname {}.", uuid.toString(), nickname);
             e.printStackTrace();
         }
     }
 
     @Override
-    public UUID getUUID(String nickname) {
+    public String getUUID(String nickname) {
         try {
             String sql = "SELECT uuid FROM players WHERE last_nickname = ?";
-
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
             preparedStatement.setString(1, nickname);
-
             ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                return UUID.fromString(resultSet.getString(1));
-            } else {
-                return null;
-            }
+            return resultSet.next() ? resultSet.getString(1) : null;
         } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't get UUID for nickname " + nickname + ".");
+            LogUtils.errorDataAccess("Unable to get UUID for nickname {}.", nickname);
             e.printStackTrace();
             return null;
         }
     }
 
     @Override
-    public UUID getUUIDByDiscordId(String discordId) {
+    public String getUUIDByDiscordId(String discordId) {
         try {
             String sql = "SELECT uuid FROM players WHERE discord_id = ?";
-
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
             preparedStatement.setString(1, discordId);
-
             ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                return UUID.fromString(resultSet.getString(1));
-            } else {
-                return null;
-            }
+            return resultSet.next() ? resultSet.getString(1) : null;
         } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't get UUID for Discord ID " + discordId + ".");
+            LogUtils.errorDataAccess("Unable to get UUID " +
+                    "for Discord ID {}.", discordId);
             e.printStackTrace();
             return null;
         }
@@ -184,50 +151,13 @@ public class SQLiteDataAccess extends DataAccess {
     public void setUUID(String nickname, UUID uuid) {
         try {
             String sql = "UPDATE players SET uuid = ? WHERE last_nickname = ?";
-
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
             preparedStatement.setString(1, uuid.toString());
             preparedStatement.setString(2, nickname);
-
             preparedStatement.execute();
         } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't set UUID for the player with UUID " + uuid + " and nickname " + nickname + ".");
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void setVerified(UUID uuid) {
-        try {
-            String sql = "UPDATE players SET verified = true WHERE uuid = ?";
-
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
-            preparedStatement.setString(1, uuid.toString());
-
-            preparedStatement.execute();
-        } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't set verified for the player with UUID " + uuid + ".");
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void setUnVerified(UUID uuid) {
-        try {
-            String sql = "UPDATE players SET verified = false WHERE uuid = ?";
-
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
-            preparedStatement.setString(1, uuid.toString());
-
-            preparedStatement.execute();
-        } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't set unverified for the player with UUID " + uuid + ".");
+            LogUtils.errorDataAccess("Unable to set UUID for the player " +
+                    "with UUID {} and nickname {}.", uuid.toString(), nickname);
             e.printStackTrace();
         }
     }
@@ -236,23 +166,46 @@ public class SQLiteDataAccess extends DataAccess {
     public boolean isVerified(UUID uuid) {
         try {
             String sql = "SELECT verified FROM players WHERE uuid = ?";
-
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
             preparedStatement.setString(1, uuid.toString());
-
             ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                return resultSet.getBoolean(1);
-            } else {
-                return false;
-            }
+            return resultSet.next() && resultSet.getBoolean(1);
         } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't check if is verified for the UUID " + uuid.toString() + ".");
+            LogUtils.errorDataAccess("Unable to check if is verified " +
+                    "for the UUID {}.", uuid.toString());
             e.printStackTrace();
             return false;
+        }
+    }
+
+    @Override
+    public boolean isVerified(String memberId) {
+        try {
+            String sql = "SELECT verified FROM players WHERE discord_id = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, memberId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            return resultSet.next() && resultSet.getBoolean(1);
+        } catch (SQLException e) {
+            LogUtils.errorDataAccess("Unable to check if is verified for " +
+                    "the member with ID {}.", memberId);
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public void setVerified(UUID uuid, boolean verified) {
+        try {
+            String sql = "UPDATE players SET verified = true WHERE uuid = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setBoolean(1, verified);
+            preparedStatement.setString(2, uuid.toString());
+            preparedStatement.execute();
+        } catch (SQLException e) {
+            LogUtils.errorDataAccess("Unable to set verified for " +
+                    "the player with UUID {}.", uuid.toString());
+            e.printStackTrace();
         }
     }
 
@@ -260,21 +213,12 @@ public class SQLiteDataAccess extends DataAccess {
     public String getDiscordId(UUID uuid) {
         try {
             String sql = "SELECT discord_id FROM players WHERE uuid = ?";
-
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
             preparedStatement.setString(1, uuid.toString());
-
             ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                return resultSet.getString(1);
-            } else {
-                return null;
-            }
+            return resultSet.next() ? resultSet.getString(1) : null;
         } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't get Discord ID for UUID " + uuid.toString() + ".");
+            LogUtils.errorDataAccess("Unable to get Discord ID for UUID {}.", uuid.toString());
             e.printStackTrace();
             return null;
         }
@@ -284,80 +228,46 @@ public class SQLiteDataAccess extends DataAccess {
     public void setDiscordId(UUID uuid, String discordId) {
         try {
             String sql = "UPDATE players SET discord_id = ? WHERE uuid = ?";
-
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
             preparedStatement.setString(1, discordId);
             preparedStatement.setString(2, uuid.toString());
-
             preparedStatement.execute();
         } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't set Discord ID for the player with UUID " + uuid + ".");
+            LogUtils.errorDataAccess("Unable to set Discord ID for " +
+                    "the player with UUID {}.", uuid.toString());
             e.printStackTrace();
-        }
-    }
-
-    @Override
-    public boolean isVerified(String memberId) {
-        try {
-            String sql = "SELECT verified FROM players WHERE discord_id = ?";
-
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
-            preparedStatement.setString(1, memberId);
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                return resultSet.getBoolean(1);
-            } else {
-                return false;
-            }
-        } catch (SQLException e) {
-            VelocityDiscordVerifier.getLogger()
-                    .error("Couldn't check if is verified for the member with ID " + memberId + ".");
-            e.printStackTrace();
-            return false;
         }
     }
 
     @Override
     public void createOrUpdatePlayerData(UUID uuid, String nickname) {
-        if (!recordExists("players", "UUID", uuid.toString())) {
-            try {
-                String sql = "INSERT INTO players (uuid, last_nickname, version) VALUES (?, ?, ?)";
-
-                PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
-                preparedStatement.setString(1, uuid.toString());
-                preparedStatement.setString(2, nickname);
-                preparedStatement.setString(3, VelocityDiscordVerifier.VERSION);
-
-                preparedStatement.execute();
-            } catch (SQLException e) {
-                VelocityDiscordVerifier.getLogger().error("Couldn't create default data for the player with UUID "
-                        + uuid + " and nickname " + nickname + ".");
-                e.printStackTrace();
-            }
-        } else {
+        if (recordExists("players", "UUID", uuid.toString())) {
             setNickname(uuid, nickname);
+            return;
+        }
+
+        try {
+            String sql = "INSERT INTO players (uuid, last_nickname, version) VALUES (?, ?, ?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, uuid.toString());
+            preparedStatement.setString(2, nickname);
+            preparedStatement.setString(3, DiscordVerifier.VERSION);
+            preparedStatement.execute();
+        } catch (SQLException e) {
+            LogUtils.errorDataAccess("Unable to create default data for " +
+                    "the player with UUID {} and nickname {}.", uuid.toString(), nickname);
+            e.printStackTrace();
         }
     }
 
     private boolean recordExists(String tableName, String recordName, String recordValue) {
         try {
             String query = "SELECT * FROM " + tableName + " WHERE " + recordName + " = \"" + recordValue + "\"";
-
             Statement statement;
-
             statement = connection.createStatement();
-
             ResultSet resultSet = statement.executeQuery(query);
-
             return resultSet.next();
         } catch (SQLException e) {
-
             e.printStackTrace();
             return false;
         }

@@ -16,36 +16,32 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package xyz.yawek.discordverifier.data;
+package xyz.yawek.discordverifier.role;
 
-import java.util.UUID;
+import net.dv8tion.jda.api.entities.Role;
+import org.jetbrains.annotations.NotNull;
 
-public interface DataAccess {
+public class GroupRole implements Comparable<GroupRole> {
 
-    void openDatabaseConnection();
+    private final String groupName;
+    private final Role role;
 
-    void closeDatabaseConnection();
+    public GroupRole(String groupName, Role role) {
+        this.groupName = groupName;
+        this.role = role;
+    }
 
-     String getNickname(UUID uuid);
+    public String getGroupName() {
+        return groupName;
+    }
 
-     void setNickname(UUID uuid, String nickname);
+    public Role getRole() {
+        return role;
+    }
 
-     String getUUID(String nickname);
-
-     String getUUIDByDiscordId(String discordId);
-
-     void setUUID(String nickname, UUID uuid);
-
-     boolean isVerified(UUID uuid);
-
-     void setVerified(UUID uuid, boolean verified);
-
-     String getDiscordId(UUID uuid);
-
-     void setDiscordId(UUID uuid, String discordId);
-
-     boolean isVerified(String memberId);
-
-     void createOrUpdatePlayerData(UUID uuid, String nickname);
+    @Override
+    public int compareTo(@NotNull GroupRole r) {
+        return Integer.compare(r.getRole().getPosition(), this.getRole().getPosition());
+    }
 
 }

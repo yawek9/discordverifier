@@ -21,66 +21,76 @@ package xyz.yawek.discordverifier.commands;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
-import xyz.yawek.discordverifier.modules.VelocityConfigManager;
-import xyz.yawek.discordverifier.modules.VerificationManager;
-import xyz.yawek.discordverifier.player.PlayerData;
-import xyz.yawek.discordverifier.utils.VelocityMessageUtils;
+import xyz.yawek.discordverifier.DiscordVerifier;
+import xyz.yawek.discordverifier.config.ConfigProvider;
+import xyz.yawek.discordverifier.manager.VerifiableUserManager;
+import xyz.yawek.discordverifier.manager.VerificationManager;
+import xyz.yawek.discordverifier.user.VerifiableUser;
+import xyz.yawek.discordverifier.utils.MessageUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class DiscordCommand implements SimpleCommand {
 
+    private final DiscordVerifier verifier;
+
+    public DiscordCommand(DiscordVerifier verifier) {
+        this.verifier = verifier;
+    }
+
     @Override
     public void execute(Invocation invocation) {
+        ConfigProvider config = verifier.getConfigProvider();
+        VerifiableUserManager userManager = verifier.getUserManager();
+        VerificationManager verification = verifier.getVerificationManager();
+
         CommandSource source = invocation.source();
         String[] args = invocation.arguments();
 
         if (!(source instanceof Player)) {
             if (args.length < 1) {
-                VelocityMessageUtils.sendMessageFromConfig(source, "AdminCommandUsage", true);
+                MessageUtils.sendMessageFromConfig(
+                        source, "AdminCommandUsage", true);
                 return;
             }
-
             if (args[0].equalsIgnoreCase("reload")) {
-                VelocityConfigManager.loadConfig();
-                VelocityMessageUtils.sendMessageFromConfig(source, "ConfigReloaded", true);
+                verifier.reload();
+                MessageUtils.sendMessageFromConfig(
+                        source, "ConfigReloaded", true);
                 return;
             }
-
-            PlayerData playerData = new PlayerData(args[1]);
-
-            if (playerData.getUUID() == null) {
-                VelocityMessageUtils.sendMessageFromConfig(source, "PlayerNotFound", true);
+            Optional<VerifiableUser> userOptional = userManager.retrieveByNickname(args[1]);
+            if (userOptional.isEmpty()) {
+                MessageUtils.sendMessageFromConfig(
+                        source, "PlayerNotFound", true);
                 return;
             }
-
-            if (playerData.getDiscordId() == null) {
-                VelocityMessageUtils.sendMessageFromConfig(source, "PlayerNotVerified", true);
+            VerifiableUser user = userOptional.get();
+            if (user.getDiscordId().isEmpty()) {
+                MessageUtils.sendMessageFromConfig(
+                        source, "PlayerNotVerified", true);
                 return;
             }
-
             String isOnline;
-
-            if (playerData.isOnline()) {
-                isOnline = VelocityConfigManager.getString("Online");
+            if (user.isOnline()) {
+                isOnline = config.getString("Online");
             } else {
-                isOnline = VelocityConfigManager.getString("Offline");
+                isOnline = config.getString("Offline");
             }
-
-            VelocityMessageUtils.sendMessageFromConfig(
+            MessageUtils.sendMessageFromConfig(
                     source,
                     "PlayerInfo",
                     true,
-                    playerData.getLastNickname(),
-                    playerData.getUUID().toString(),
-                    playerData.getDiscordId(),
-                    playerData.getDiscordName(),
+                    user.getLastNickname().orElse(""),
+                    user.getUUID().toString(),
+                    user.getDiscordId().get(),
+                    user.getDiscordName().orElse(""),
                     isOnline
             );
-
             return;
         }
 
@@ -88,108 +98,97 @@ public class DiscordCommand implements SimpleCommand {
             if (args.length < 2) {
                 if (args.length == 1) {
                     if (args[0].equalsIgnoreCase("accept")) {
-                        VerificationManager.completeVerificationProcess((Player) source, true);
+                        verification.completeVerification(
+                                (Player) source, true);
                         return;
                     }
-
                     if (args[0].equalsIgnoreCase("deny")) {
-                        VerificationManager.completeVerificationProcess((Player) source, false);
+                        verification.completeVerification(
+                                (Player) source, false);
                         return;
                     }
-
                     if (args[0].equalsIgnoreCase("unlink")) {
-                        PlayerData playerData = new PlayerData(((Player) source).getUniqueId());
-
-                        if (playerData.getDiscordId() == null) {
-                            VelocityMessageUtils.sendMessageFromConfig(source, "NotVerified", true);
+                        VerifiableUser user =
+                                userManager.create(((Player) source).getUniqueId());
+                        if (user.getDiscordId().isEmpty()) {
+                            MessageUtils.sendMessageFromConfig(
+                                    source, "NotVerified", true);
                             return;
                         }
-
-                        VerificationManager.removeRoles((Player) source);
-
-                        playerData.setVerified(false);
-                        playerData.setDiscordName(null);
-                        playerData.setDiscordId(null);
-
-                        VelocityMessageUtils.sendMessageFromConfig(source, "UnverifiedSuccesfully", true);
-
+                        verification.removeRoles((Player) source);
+                        userManager.updateUser(user.toBuilder()
+                                .discordId(null)
+                                .discordName(null)
+                                .verified(false)
+                                .build());
+                        MessageUtils.sendMessageFromConfig(
+                                source, "UnverifiedSuccesfully", true);
                         return;
                     }
                 }
-
-                VelocityMessageUtils.sendMessageFromConfig(source, "AdminCommandUsage", true);
+                MessageUtils.sendMessageFromConfig(
+                        source, "AdminCommandUsage", true);
                 return;
             }
-
-            PlayerData playerData = new PlayerData(args[1]);
-
-            if (playerData.getUUID() == null) {
-                VelocityMessageUtils.sendMessageFromConfig(source, "PlayerNotFound", true);
+            Optional<VerifiableUser> userOptional = userManager.retrieveByNickname(args[1]);
+            if (userOptional.isEmpty()) {
+                MessageUtils.sendMessageFromConfig(
+                        source, "PlayerNotFound", true);
                 return;
             }
-
-            if (playerData.getDiscordId() == null) {
-                VelocityMessageUtils.sendMessageFromConfig(source, "PlayerNotVerified", true);
+            VerifiableUser user = userOptional.get();
+            if (user.getDiscordId().isEmpty()) {
+                MessageUtils.sendMessageFromConfig(
+                        source, "PlayerNotVerified", true);
                 return;
             }
-
             String isOnline;
-
-            if (playerData.isOnline()) {
-                isOnline = VelocityConfigManager.getString("Online");
+            if (user.isOnline()) {
+                isOnline = config.getString("Online");
             } else {
-                isOnline = VelocityConfigManager.getString("Offline");
+                isOnline = config.getString("Offline");
             }
-
-            VelocityMessageUtils.sendMessageFromConfig(
+            MessageUtils.sendMessageFromConfig(
                     source,
                     "PlayerInfo",
                     true,
-                    playerData.getLastNickname(),
-                    playerData.getUUID().toString(),
-                    playerData.getDiscordId(),
-                    playerData.getDiscordName(),
+                    user.getLastNickname().orElse(""),
+                    user.getUUID().toString(),
+                    user.getDiscordId().get(),
+                    user.getDiscordName().orElse(""),
                     isOnline
             );
-
             return;
         }
-
         if (args.length == 0) {
-            VelocityMessageUtils.sendMessageFromConfig(source, "DiscordInfo", true);
+            MessageUtils.sendMessageFromConfig(source, "DiscordInfo", true);
             return;
         }
-
         if (args[0].equalsIgnoreCase("accept")) {
-            VerificationManager.completeVerificationProcess((Player) source, true);
+            verification.completeVerification((Player) source, true);
             return;
         }
-
         if (args[0].equalsIgnoreCase("deny")) {
-            VerificationManager.completeVerificationProcess((Player) source, false);
+            verification.completeVerification((Player) source, false);
             return;
         }
-
         if (args[0].equalsIgnoreCase("unlink")) {
-            PlayerData playerData = new PlayerData(((Player) source).getUniqueId());
-
-            if (playerData.getDiscordId() == null) {
-                VelocityMessageUtils.sendMessageFromConfig(source, "NotVerified", true);
+            VerifiableUser user = userManager.create(((Player) source).getUniqueId());
+            if (user.getDiscordId().isEmpty()) {
+                MessageUtils.sendMessageFromConfig(source, "NotVerified", true);
                 return;
             }
-
-            VerificationManager.removeRoles((Player) source);
-
-            playerData.setVerified(false);
-            playerData.setDiscordName(null);
-            playerData.setDiscordId(null);
-
-            VelocityMessageUtils.sendMessageFromConfig(source, "UnverifiedSuccesfully", true);
-
+            verification.removeRoles((Player) source);
+            userManager.updateUser(user.toBuilder()
+                    .discordId(null)
+                    .discordName(null)
+                    .verified(false)
+                    .build());
+            MessageUtils.sendMessageFromConfig(source, "UnverifiedSuccesfully", true);
             return;
         }
 
-        VelocityMessageUtils.sendMessageFromConfig(source, "DiscordInfo", true);
+        MessageUtils.sendMessageFromConfig(source, "DiscordInfo", true);
     }
 
     @Override
