@@ -28,15 +28,16 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import org.slf4j.Logger;
-import xyz.yawek.discordverifier.commands.DiscordCommand;
+import xyz.yawek.discordverifier.command.DiscordCommand;
+import xyz.yawek.discordverifier.config.Config;
+import xyz.yawek.discordverifier.config.ConfigProvider;
 import xyz.yawek.discordverifier.data.DataProvider;
-import xyz.yawek.discordverifier.discordlisteners.MessageReceivedListener;
-import xyz.yawek.discordverifier.listeners.LoginListener;
+import xyz.yawek.discordverifier.discordlistener.MessageReceivedListener;
+import xyz.yawek.discordverifier.listener.LoginListener;
 import xyz.yawek.discordverifier.manager.DiscordManager;
+import xyz.yawek.discordverifier.manager.LuckPermsManager;
 import xyz.yawek.discordverifier.manager.VerifiableUserManager;
 import xyz.yawek.discordverifier.manager.VerificationManager;
-import xyz.yawek.discordverifier.config.ConfigProvider;
-import xyz.yawek.discordverifier.manager.LuckPermsManager;
 
 import java.nio.file.Path;
 
@@ -59,6 +60,7 @@ public class DiscordVerifier {
     private final Logger logger;
     private final ProxyServer server;
     private final Path dataDirectory;
+    private Config config;
     private ConfigProvider configProvider;
     private DataProvider dataProvider;
     private DiscordManager discordManager;
@@ -79,13 +81,20 @@ public class DiscordVerifier {
 
         this.configProvider = new ConfigProvider(this);
         configProvider.loadConfig();
+        this.config = new Config(configProvider);
+
         this.dataProvider = new DataProvider(this);
         dataProvider.setup();
-        this.discordManager = new DiscordManager(this);
-        discordManager.addEventListener(new MessageReceivedListener(this));
+
         this.userManager = new VerifiableUserManager(this);
+
+        this.discordManager = new DiscordManager(this);
+        if (discordManager.setup()) {
+            discordManager.addEventListener(new MessageReceivedListener(this));
+            new LuckPermsManager(this).reloadPerms();
+        }
+
         this.verificationManager = new VerificationManager(this);
-        new LuckPermsManager(this).reloadPerms();
 
         server.getEventManager().register(this, new LoginListener(this));
 
@@ -102,6 +111,7 @@ public class DiscordVerifier {
     @Subscribe
     public void onShutdown(ProxyShutdownEvent e) {
         dataProvider.shutdown();
+        discordManager.shutdown();
     }
 
     public static DiscordVerifier getVerifier() {
@@ -120,8 +130,8 @@ public class DiscordVerifier {
         return dataDirectory;
     }
 
-    public ConfigProvider getConfigProvider() {
-        return configProvider;
+    public Config getConfig() {
+        return config;
     }
 
     public DataProvider getDataProvider() {

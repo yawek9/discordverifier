@@ -35,7 +35,7 @@ public class DataProvider {
 
     public void setup() {
         if (dataAccess != null) dataAccess.closeDatabaseConnection();
-        dataAccess = verifier.getConfigProvider().getBoolean("UseMySQL")
+        dataAccess = verifier.getConfig().useMySQL()
                 ? new MySQLDataAccess(verifier) : new SQLiteDataAccess(verifier);
         dataAccess.openDatabaseConnection();
     }

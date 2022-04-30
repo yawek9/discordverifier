@@ -21,32 +21,31 @@ package xyz.yawek.discordverifier.config;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import xyz.yawek.discordverifier.DiscordVerifier;
-import xyz.yawek.discordverifier.utils.LogUtils;
+import xyz.yawek.discordverifier.util.LogUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ConfigProvider {
 
     private final DiscordVerifier verifier;
     private HashMap<String, Object> config;
 
-    public ConfigProvider(DiscordVerifier verifier) {
-        this.verifier = verifier;
+    public ConfigProvider(DiscordVerifier barricade) {
+        this.verifier = barricade;
     }
 
     public void loadConfig() {
-        Path directory = verifier.getDataDirectory();
-        if (!directory.toFile().exists()) directory.toFile().mkdirs();
+        Path dataDir = verifier.getDataDirectory();
+        if (!dataDir.toFile().exists()) dataDir.toFile().mkdirs();
 
         Yaml yaml = new Yaml();
-        File configFile = new File(directory.toString(), "config.yml");
+        File configFile = new File(dataDir.toString(), "config.yml");
         if (!configFile.exists()) {
-            InputStream inputStream = verifier.getClass()
+            InputStream inputStream = verifier
+                    .getClass()
                     .getClassLoader()
                     .getResourceAsStream("config.yml");
             try (OutputStream outputStream = new FileOutputStream(configFile, false)) {
@@ -56,12 +55,12 @@ public class ConfigProvider {
                     outputStream.write(bytes, 0, read);
                 }
             } catch (IOException e) {
-                LogUtils.error("Unable to create config file.");
+                LogUtils.error("Config file could not be created.");
                 e.printStackTrace();
             }
         } else {
             try {
-                File file = new File(directory.toString(), "config.yml");
+                File file = new File(dataDir.toString(), "config.yml");
                 DumperOptions options = new DumperOptions();
                 options.setAllowUnicode(true);
                 options.setIndent(2);
@@ -70,52 +69,109 @@ public class ConfigProvider {
                 Yaml yamlToWrite = new Yaml(options);
                 InputStream inputStream = new FileInputStream(file);
                 Map<String, Object> map = yamlToWrite.load(inputStream);
-                InputStream targetInputStream = verifier.getClass()
+                inputStream.close();
+                InputStream targetInputStream = verifier
+                        .getClass()
                         .getClassLoader()
                         .getResourceAsStream("config.yml");
                 Map<String, Object> targetMap = yamlToWrite.load(targetInputStream);
-                boolean update = false;
-                for (String s : targetMap.keySet()) {
-                    if (!map.containsKey(s)) {
-                        map.put(s, targetMap.get(s));
-                        update = true;
-                    }
-                }
-                if (update) {
+
+                Optional<Map<String, Object>> updatedOptional = updateMap(map, targetMap);
+                if (updatedOptional.isPresent()) {
                     OutputStreamWriter writer =
                             new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);
-
-                    yamlToWrite.dump(map, writer);
+                    yamlToWrite.dump(updatedOptional.get(), writer);
                 }
             } catch (IOException exception) {
-                LogUtils.error("Unable to update config file.");
+                LogUtils.error("Config file could not be updated.");
                 exception.printStackTrace();
             }
         }
 
         try {
-            config = new HashMap<>(yaml.load(new FileInputStream(configFile)));
-        } catch (FileNotFoundException e) {
-            LogUtils.error("Unable to load config file.");
+            FileInputStream fileInputStream = new FileInputStream(configFile);
+            config = new HashMap<>(yaml.load(fileInputStream));
+            fileInputStream.close();
+        } catch (IOException e) {
+            LogUtils.error("Config file could not be loaded.");
             e.printStackTrace();
         }
     }
 
-    public String getString(String key) {
-        return String.valueOf(config.get(key));
+    protected String getString(String key) {
+        Object value = getValue(key);
+        return value != null ? (String) value : null;
     }
 
-    public int getInt(String key) {
-        return (int) config.get(key);
+    protected int getInt(String key) {
+        Object value = getValue(key);
+        return value != null ? (int) value : -1;
     }
 
-    public boolean getBoolean(String key) {
-        return (boolean) config.get(key);
+    protected boolean getBoolean(String key) {
+        Object value = getValue(key);
+        return value != null && (boolean) value;
     }
 
     @SuppressWarnings("unchecked")
-    public LinkedHashMap<String, ?> getMap(String key) {
-        return (LinkedHashMap<String, ?>) config.get(key);
+    protected List<String> getStringList(String key) {
+        Object value = getValue(key);
+        return value != null ? (List<String>) value : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected LinkedHashMap<String, ?> getMap(String key) {
+        Object value = getValue(key);
+        return value != null ? (LinkedHashMap<String, ?>) value : null;
+    }
+
+    private Object getValue(String key) {
+        if (key.contains(".")) {
+            return getNestedValue(key);
+        } else {
+            return config.get(key);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object getNestedValue(String key) {
+        String[] abstractKey = key.split("\\.");
+        if (!config.containsKey(abstractKey[0])) return null;
+        Map<String, ?> map = getMap(abstractKey[0]);
+        int i = 2;
+        for (String s : Arrays.stream(abstractKey).skip(1).toList()) {
+            if (map.containsKey(s) && (!(map.get(s) instanceof Map)
+                    || i == abstractKey.length)) {
+                return map.get(s);
+            } else if (map.containsKey(s)) {
+                map = (Map<String, ?>) map.get(s);
+            }
+            i++;
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Optional<Map<String, Object>> updateMap(
+            Map<String, Object> map, Map<String, Object> targetMap) {
+        Map<String, Object> temporaryMap = new HashMap<>(map);
+        for (String targetKey : targetMap.keySet()) {
+            if (targetMap.get(targetKey) instanceof Map nestedMap) {
+                if (!map.containsKey(targetKey) || !(map.get(targetKey) instanceof Map)) {
+                    temporaryMap.put(targetKey, targetMap.get(targetKey));
+                    continue;
+                }
+                Optional<Map<String, Object>> nestedMapOptional =
+                        updateMap((Map<String, Object>) map.get(targetKey),
+                                (Map<String, Object>) nestedMap);
+                nestedMapOptional.ifPresent(stringObjectMap ->
+                        temporaryMap.put(targetKey, stringObjectMap));
+            } else if (!map.containsKey(targetKey)) {
+                temporaryMap.put(targetKey, targetMap.get(targetKey));
+            }
+        }
+        if (!map.equals(temporaryMap)) return Optional.of(temporaryMap);
+        return Optional.empty();
     }
 
 }

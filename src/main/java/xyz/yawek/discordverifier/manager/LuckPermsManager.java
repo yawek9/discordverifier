@@ -23,7 +23,7 @@ import net.dv8tion.jda.api.entities.Role;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import xyz.yawek.discordverifier.DiscordVerifier;
-import xyz.yawek.discordverifier.utils.LogUtils;
+import xyz.yawek.discordverifier.util.LogUtils;
 
 import java.util.LinkedHashMap;
 import java.util.Optional;
@@ -43,19 +43,18 @@ public class LuckPermsManager {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public void reloadPerms() {
-        DiscordManager discordManager = verifier.getDiscordManager();
-        LinkedHashMap<String, String> roleMap =
-                (LinkedHashMap<String, String>) verifier.getConfigProvider().getMap("Roles");
+        DiscordManager discord = verifier.getDiscordManager();
+
+        LinkedHashMap<String, String> roleMap = verifier.getConfig().groupsRoles();
         roleMap.forEach((groupName, roleId) -> {
-            Optional<Role> roleOptional = discordManager.getRole(roleId);
+            Optional<Role> roleOptional = discord.getRole(roleId);
             if (roleOptional.isEmpty()) return;
 
-            discordManager.getPlayersWithRole(roleId).forEach(user -> {
+            discord.getPlayersWithRole(roleId).forEach(user -> {
                 if (user.getDiscordId().isEmpty()) return;
                 Optional<Member> memberOptional =
-                        discordManager.getMemberById(user.getDiscordId().get());
+                        discord.getMemberById(user.getDiscordId().get());
                 if (memberOptional.isEmpty()) return;
 
                 luckPerms.getUserManager().loadUser(user.getUUID()).thenAccept(lpUser -> {
@@ -69,7 +68,7 @@ public class LuckPermsManager {
                                 return false;
                             });
                     if (!hasPermission) {
-                        discordManager.removeRole(memberOptional.get(), roleOptional.get());
+                        discord.removeRole(memberOptional.get(), roleOptional.get());
                     }
                 });
             });

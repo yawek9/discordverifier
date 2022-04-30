@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package xyz.yawek.discordverifier.utils;
+package xyz.yawek.discordverifier.util;
 
 import org.slf4j.Logger;
 import xyz.yawek.discordverifier.DiscordVerifier;
@@ -25,20 +25,16 @@ public class LogUtils {
 
     private static final Logger LOGGER = DiscordVerifier.getVerifier().getLogger();
 
-    public static void info(String text) {
-        LOGGER.info(text);
+    public static void info(String text, String... arguments) {
+        LOGGER.info(text, arguments);
     }
 
-    public static void error(String text) {
-        LOGGER.error(text);
+    public static void error(String text, String... arguments) {
+        LOGGER.error(text, (Object[]) arguments);
     }
 
-    public static void infoDataAccess(String text) {
-        LOGGER.info("[Data] " + text);
-    }
-
-    public static void errorDataAccess(String text) {
-        LOGGER.error("[Data] " + text);
+    public static void infoDataAccess(String text, String... arguments) {
+        LOGGER.info("[Data] " + text, (Object[]) arguments);
     }
 
     public static void errorDataAccess(String text, String... arguments) {

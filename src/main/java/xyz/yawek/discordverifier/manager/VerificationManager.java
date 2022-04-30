@@ -24,17 +24,17 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import xyz.yawek.discordverifier.DiscordVerifier;
-import xyz.yawek.discordverifier.config.ConfigProvider;
+import xyz.yawek.discordverifier.config.Config;
 import xyz.yawek.discordverifier.role.GroupRole;
 import xyz.yawek.discordverifier.user.VerifiableUser;
-import xyz.yawek.discordverifier.utils.MessageUtils;
 
-import java.util.LinkedHashMap;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class VerificationManager {
 
@@ -45,85 +45,65 @@ public class VerificationManager {
         this.verifier = verifier;
     }
 
-    public void startVerification(Member member, Player player) {
+    public boolean startVerification(Member member, Player player) {
+        Config config = verifier.getConfig();
+
+        if (verifyingPlayers.containsKey(player)) return false;
+
         verifyingPlayers.put(player, member);
-        MessageUtils.sendMessageFromConfig(
-                player,
-                "AcceptVerification",
-                true,
-                member.getUser().getAsTag());
+        player.sendMessage(config.verificationRequest(member.getUser().getAsTag()));
         verifier.getServer().getScheduler()
                 .buildTask(DiscordVerifier.getVerifier(),
                         () -> cancelVerification(member, player))
-                .delay(verifier.getConfigProvider().getInt(
-                        "VerificationExpireAfter"), TimeUnit.SECONDS)
+                .delay(config.verificationExpireTime(), TimeUnit.SECONDS)
                 .schedule();
+        return true;
     }
 
     public void cancelVerification(Member member, Player player) {
-        if (player.isActive()) {
-            MessageUtils.sendMessageFromConfig(
-                    player,
-                    "VerificationExpired",
-                    true,
-                    member.getUser().getAsTag());
+        if (player.isActive() && verifyingPlayers.containsKey(player)) {
+            player.sendMessage(verifier.getConfig()
+                    .verificationExpired(member.getUser().getAsTag()));
             verifyingPlayers.remove(player);
         }
     }
 
     public void completeVerification(Player player, boolean accepted) {
-        ConfigProvider config = verifier.getConfigProvider();
+        Config config = verifier.getConfig();
 
         if (!verifyingPlayers.containsKey(player)) {
-            MessageUtils.sendMessageFromConfig(
-                    player,
-                    "NoVerificationRequired",
-                    true);
+            player.sendMessage(config.noRequests());
             return;
         }
         if (!player.isActive()) {
             return;
         }
         if (!accepted) {
-            MessageUtils.sendMessageFromConfig(
-                    player,
-                    "VerificationDenied",
-                    true);
-            verifier.getDiscordManager().sendVerificationEmbed(
-                    config.getString("VerificationDeniedTitle"),
-                    config.getString("VerificationDeniedBody"),
-                    config.getString("VerificationDeniedFooter"));
+            player.sendMessage(config.verificationDenied());
+            verifier.getDiscordManager().sendInVerification(
+                    config.verificationDenied(player.getUsername()));
             verifyingPlayers.remove(player);
             return;
         }
 
         VerifiableUser user = verifier.getUserManager().create(player.getUniqueId());
         Member member = verifyingPlayers.get(player);
-        user.setVerified(true);
-        user.setDiscordId(member.getId());
-        user.setDiscordName(member.getUser().getAsTag());
-        verifier.getDataProvider().updateUser(user);
+        verifier.getDataProvider().updateUser(user.toBuilder()
+                .verified(true)
+                .discordId(member.getId())
+                .discordName(member.getUser().getAsTag())
+                .build());
 
         updateRoles(player);
         updateNickname(player);
 
-        MessageUtils.sendMessageFromConfig(
-                player,
-                "VerifiedSuccessfully",
-                true,
-                verifyingPlayers.get(player).getUser().getAsTag()
-        );
-        verifier.getDiscordManager().sendVerificationEmbed(
-                config.getString("VerificationSuccessfulTitle"),
-                config.getString("VerificationSuccessfulBody"),
-                config.getString("VerificationSuccessfulFooter"));
-
+        player.sendMessage(config.verifiedSuccessfully(verifyingPlayers.get(player).getUser().getAsTag()));
+        verifier.getDiscordManager().sendInVerification(config.verificationSuccess());
         verifyingPlayers.remove(player);
     }
 
-    @SuppressWarnings("unchecked")
     public void updateRoles(Player player) {
-        ConfigProvider config = verifier.getConfigProvider();
+        Config config = verifier.getConfig();
         DiscordManager discord = verifier.getDiscordManager();
 
         VerifiableUser user = verifier.getUserManager().create(player.getUniqueId());
@@ -131,31 +111,21 @@ public class VerificationManager {
         Optional<Member> memberOptional = discord.getMemberById(user.getDiscordId().get());
         if (memberOptional.isEmpty()) return;
 
-        LinkedHashMap<String, String> roleMap =
-                (LinkedHashMap<String, String>) config.getMap("Roles");
-        Set<GroupRole> roleSet = new TreeSet<>();
-
-        roleMap.forEach((groupName, roleId) -> {
-            Optional<Role> roleOptional = verifier.getDiscordManager().getRole(roleId);
-            roleOptional.ifPresent(role -> roleSet.add(new GroupRole(groupName, role)));
-        });
+        Set<GroupRole> roleSet = config.groupsRoles().entrySet()
+                .stream().map(entry -> {
+                    Optional<Role> roleOptional =
+                            verifier.getDiscordManager().getRole(entry.getValue());
+                    if (roleOptional.isEmpty()) return null;
+                    return new GroupRole(entry.getKey(), roleOptional.get());
+                }).filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
 
         Member member = memberOptional.get();
-        if (!user.isVerified()) {
-            roleSet.stream()
-                    .filter(groupRole ->
-                            groupRole.getGroupName().equals("default"))
-                    .findAny()
-                    .ifPresent(groupRole ->
-                            discord.addRole(member, groupRole.getRole()));
-        }
         boolean roleAssigned = false;
         for (GroupRole groupRole : roleSet) {
             Role role = groupRole.getRole();
             if (player.getPermissionValue("group." + groupRole.getGroupName())
-                    .equals(Tristate.TRUE)
-                    && (!roleAssigned ||
-                    !config.getBoolean("LimitRolesToOne"))) {
+                    .equals(Tristate.TRUE) && (!roleAssigned || !config.oneRoleLimit())) {
                 discord.addRole(member, role);
                 roleAssigned = true;
             } else {
@@ -164,20 +134,20 @@ public class VerificationManager {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public void removeRoles(Player player) {
-        ConfigProvider config = verifier.getConfigProvider();
+        Config config = verifier.getConfig();
 
         VerifiableUser user = verifier.getUserManager().create(player.getUniqueId());
         if (user.getDiscordId().isEmpty()) return;
 
-        LinkedHashMap<String, String> roleMap =
-                (LinkedHashMap<String, String>) config.getMap("Roles");
-        Set<GroupRole> roleSet = new TreeSet<>();
-        roleMap.forEach((groupName, roleId) -> {
-            Optional<Role> roleOptional = verifier.getDiscordManager().getRole(roleId);
-            roleOptional.ifPresent(role -> roleSet.add(new GroupRole(groupName, role)));
-        });
+        Set<GroupRole> roleSet = config.groupsRoles().entrySet()
+                .stream().map(entry -> {
+                    Optional<Role> roleOptional =
+                            verifier.getDiscordManager().getRole(entry.getValue());
+                    if (roleOptional.isEmpty()) return null;
+                    return new GroupRole(entry.getKey(), roleOptional.get());
+                }).filter(Objects::nonNull)
+                .collect(Collectors.toCollection(TreeSet::new));
 
         DiscordManager discordManager = verifier.getDiscordManager();
         Optional<Member> memberOptional =
@@ -188,9 +158,9 @@ public class VerificationManager {
     }
 
     public void updateNickname(Player player) {
-        ConfigProvider config = verifier.getConfigProvider();
+        Config config = verifier.getConfig();
 
-        if (!config.getBoolean("ForceNicknamesOnDiscord")) {
+        if (!config.forceNicknames()) {
             return;
         }
         VerifiableUser user = verifier.getUserManager().create(player.getUniqueId());
@@ -201,7 +171,7 @@ public class VerificationManager {
         Optional<Member> memberOptional =
                 discordManager.getMemberById(user.getDiscordId().get());
         if (memberOptional.isEmpty()) return;
-        if (!memberOptional.get().getPermissions().contains(Permission.ADMINISTRATOR)) {
+        if (!memberOptional.get().getPermissions().contains(Permission.NICKNAME_CHANGE)) {
             discordManager.setNickname(memberOptional.get(), player.getUsername());
         }
     }

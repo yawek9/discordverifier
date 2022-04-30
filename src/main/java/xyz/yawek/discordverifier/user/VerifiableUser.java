@@ -28,7 +28,7 @@ public class VerifiableUser {
     private String discordId;
     private String discordName;
     private boolean verified;
-    private final boolean online;
+    private boolean online;
 
     public VerifiableUser(VerifiableUserBuilder verifiableUserBuilder) {
         this.uuid = verifiableUserBuilder.uuid;
@@ -78,6 +78,10 @@ public class VerifiableUser {
         return online;
     }
 
+    public void setOnline(boolean online) {
+        this.online = online;
+    }
+
     public VerifiableUserBuilder toBuilder() {
         return new VerifiableUserBuilder(uuid)
                 .lastNickname(lastNickname)
@@ -91,7 +95,6 @@ public class VerifiableUser {
         return new VerifiableUserBuilder(uuid);
     }
 
-    @SuppressWarnings("UnusedReturnValue")
     public static class VerifiableUserBuilder {
 
         private final UUID uuid;

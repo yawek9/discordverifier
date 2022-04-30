@@ -16,18 +16,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package xyz.yawek.discordverifier.discordlisteners;
+package xyz.yawek.discordverifier.discordlistener;
 
 import com.velocitypowered.api.proxy.Player;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import xyz.yawek.discordverifier.DiscordVerifier;
+import xyz.yawek.discordverifier.config.Config;
 import xyz.yawek.discordverifier.manager.DiscordManager;
 import xyz.yawek.discordverifier.manager.VerificationManager;
-import xyz.yawek.discordverifier.config.ConfigProvider;
 import xyz.yawek.discordverifier.user.VerifiableUser;
 
 import java.util.Optional;
@@ -44,10 +45,10 @@ public class MessageReceivedListener extends ListenerAdapter {
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
         DiscordManager discord = verifier.getDiscordManager();
-        ConfigProvider config = verifier.getConfigProvider();
+        Config config = verifier.getConfig();
         VerificationManager verification = verifier.getVerificationManager();
 
-        if (!e.getChannel().getId().equalsIgnoreCase(config.getString("VerificationChannelID"))) {
+        if (!e.getChannel().getId().equalsIgnoreCase(config.channelId())) {
             return;
         }
         if (discord.isOtherBot(e.getAuthor())) {
@@ -56,7 +57,7 @@ public class MessageReceivedListener extends ListenerAdapter {
 
         Message message = e.getMessage();
         if (discord.isBotItself(e.getAuthor())) {
-            message.delete().queueAfter(config.getInt("DeleteMessageAfter"), TimeUnit.SECONDS);
+            deleteAfterDelay(message);
             return;
         }
         if (e.getMessage().getContentRaw().length() > 100) {
@@ -67,53 +68,49 @@ public class MessageReceivedListener extends ListenerAdapter {
             message.delete().queue();
             return;
         }
-        String nickname = message.getContentRaw().replaceAll("!verify ", "");
+        String nickname = message.getContentRaw().replaceFirst("!verify ", "");
         if (nickname.length() > 40) {
             message.delete().queue();
             return;
         }
         Optional<VerifiableUser> user =
                 verifier.getUserManager().retrieveByNickname(nickname);
-        if (verifier.getServer().getPlayer(nickname).isEmpty() || user.isEmpty()) {
-            discord.sendEmbed(e.getTextChannel(),
-                    config.getString("PlayerNotFoundTitle").replaceAll("%NICKNAME%", nickname),
-                    config.getString("PlayerNotFoundBody").replaceAll("%NICKNAME%", nickname),
-                    config.getString("PlayerNotFoundFooter").replaceAll("%NICKNAME%", nickname));
-            message.delete().queueAfter(config.getInt("DeleteMessageAfter"), TimeUnit.SECONDS);
+        Optional<Player> playerOptional = verifier.getServer().getPlayer(nickname);
+        TextChannel channel = e.getTextChannel();
+        if (playerOptional.isEmpty() || user.isEmpty()) {
+            channel.sendMessageEmbeds(config.playerNotFound(nickname)).queue();
+            deleteAfterDelay(message);
             return;
         }
         if (user.get().isVerified()) {
-            discord.sendEmbed(e.getTextChannel(),
-                    config.getString("PlayerAlreadyVerifiedTitle").replaceAll("%NICKNAME%", nickname),
-                    config.getString("PlayerAlreadyVerifiedBody").replaceAll("%NICKNAME%", nickname),
-                    config.getString("PlayerAlreadyVerifiedFooter").replaceAll("%NICKNAME%", nickname));
-            message.delete().queueAfter(config.getInt("DeleteMessageAfter"), TimeUnit.SECONDS);
+            channel.sendMessageEmbeds(config.playerAlreadyVerified(nickname)).queue();
+            deleteAfterDelay(message);
             return;
         }
         Member member = e.getMember();
         if (member == null) {
-            message.delete().queueAfter(config.getInt("DeleteMessageAfter"), TimeUnit.SECONDS);
+            message.delete().queue();
             return;
         }
         Optional<VerifiableUser> discordUser =
                 verifier.getUserManager().retrieveByMemberId(e.getMember().getId());
         if (discordUser.isPresent() && discordUser.get().isVerified()) {
-            discord.sendEmbed(e.getTextChannel(),
-                    config.getString("DiscordAlreadyVerifiedTitle"),
-                    config.getString("DiscordAlreadyVerifiedBody"),
-                    config.getString("DiscordAlreadyVerifiedFooter"));
-            message.delete().queueAfter(config.getInt("DeleteMessageAfter"), TimeUnit.SECONDS);
+            channel.sendMessageEmbeds(config.discordAlreadyVerified(nickname)).queue();
+            deleteAfterDelay(message);
             return;
         }
+        if (verification.startVerification(e.getMember(), playerOptional.get())) {
+            channel.sendMessageEmbeds(config.verificationAccepted(nickname)).queue();
+            deleteAfterDelay(message);
+            return;
+        }
+        message.delete().queue();
+    }
 
-        Player player = verifier.getServer().getPlayer(nickname).get();
-        verification.startVerification(e.getMember(), player);
-
-        discord.sendEmbed(e.getTextChannel(),
-                config.getString("VerificationAcceptedTitle").replaceAll("%NICKNAME%", nickname),
-                config.getString("VerificationAcceptedBody").replaceAll("%NICKNAME%", nickname),
-                config.getString("VerificationAcceptedFooter").replaceAll("%NICKNAME%", nickname));
-        message.delete().queueAfter(config.getInt("DeleteMessageAfter"), TimeUnit.SECONDS);
+    private void deleteAfterDelay(Message message) {
+        message.delete().queueAfter(
+                verifier.getConfig().messageDeleteDelay(),
+                TimeUnit.SECONDS);
     }
 
 }

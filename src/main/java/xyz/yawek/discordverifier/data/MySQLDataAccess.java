@@ -20,8 +20,8 @@ package xyz.yawek.discordverifier.data;
 
 import com.zaxxer.hikari.HikariDataSource;
 import xyz.yawek.discordverifier.DiscordVerifier;
-import xyz.yawek.discordverifier.config.ConfigProvider;
-import xyz.yawek.discordverifier.utils.LogUtils;
+import xyz.yawek.discordverifier.config.Config;
+import xyz.yawek.discordverifier.util.LogUtils;
 
 import java.sql.*;
 import java.util.UUID;
@@ -37,19 +37,15 @@ public class MySQLDataAccess implements DataAccess {
 
     @Override
     public void openDatabaseConnection() {
-        ConfigProvider config = verifier.getConfigProvider();
+        Config config = verifier.getConfig();
+
         hikari = new HikariDataSource();
         hikari.setDataSourceClassName("com.mysql.cj.jdbc.MysqlDataSource");
-        hikari.addDataSourceProperty("serverName",
-                config.getString("DatabaseAddress"));
-        hikari.addDataSourceProperty("port",
-                config.getString("DatabasePort"));
-        hikari.addDataSourceProperty("databaseName",
-                config.getString("DatabaseName"));
-        hikari.addDataSourceProperty("user",
-                config.getString("DatabaseUser"));
-        hikari.addDataSourceProperty("password",
-                config.getString("DatabasePassword"));
+        hikari.addDataSourceProperty("serverName", config.databaseAddress());
+        hikari.addDataSourceProperty("port", config.databasePort());
+        hikari.addDataSourceProperty("databaseName", config.databaseName());
+        hikari.addDataSourceProperty("user", config.databaseUser());
+        hikari.addDataSourceProperty("password", config.databasePassword());
         hikari.setPoolName("discordverifier-hikari");
 
         try (Connection connection = hikari.getConnection()) {

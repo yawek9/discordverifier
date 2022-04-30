@@ -18,32 +18,50 @@
 
 package xyz.yawek.discordverifier.manager;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import xyz.yawek.discordverifier.DiscordVerifier;
+import xyz.yawek.discordverifier.config.Config;
 import xyz.yawek.discordverifier.user.VerifiableUser;
+import xyz.yawek.discordverifier.util.LogUtils;
 
 import javax.security.auth.login.LoginException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class DiscordManager {
 
     private final DiscordVerifier verifier;
     private JDA jda;
-    private final long GUILD_ID;
+    private long GUILD_ID;
     
     public DiscordManager(DiscordVerifier verifier) {
         this.verifier = verifier;
-        this.GUILD_ID = Long.parseLong(verifier.getConfigProvider().getString("GuildID"));
+    }
+
+    public boolean setup() {
+        Config config = verifier.getConfig();
+
+        if (config.discordToken()
+                .equalsIgnoreCase("ENTER_YOUR_BOT_TOKEN_HERE")
+                || config.guildId()
+                .equalsIgnoreCase("ENTER_YOUR_GUILD_ID_HERE")
+                || config.channelId()
+                .equalsIgnoreCase("ENTER_YOUR_CHANNEL_ID_HERE")) {
+            LogUtils.errorDiscord("You have not set up 'discord' settings in the config.yml " +
+                    "correctly. Make sure that everything is fine and restart the server.");
+            return false;
+        }
+
+        this.GUILD_ID = Long.parseLong(config.guildId());
         try {
             jda = JDABuilder.create(
-                    verifier.getConfigProvider().getString("BotToken"),
+                    config.discordToken(),
                     GatewayIntent.GUILD_MEMBERS,
                     GatewayIntent.DIRECT_MESSAGE_REACTIONS,
                     GatewayIntent.DIRECT_MESSAGE_TYPING,
@@ -58,11 +76,19 @@ public class DiscordManager {
                     GatewayIntent.GUILD_MESSAGES,
                     GatewayIntent.GUILD_PRESENCES,
                     GatewayIntent.GUILD_VOICE_STATES
-            ).build();
-            jda.awaitReady();
+            ).build().awaitReady();
+            return true;
         } catch (LoginException | InterruptedException e) {
+            LogUtils.errorDiscord("Unable to connect to the Discord bot. " +
+                    "Make sure you set 'discord' settings correctly in the config.yml.");
             e.printStackTrace();
         }
+        return false;
+    }
+
+    public void shutdown() {
+        if (jda == null) return;
+        jda.shutdown();
     }
 
     public Optional<String> getDiscordName(String memberId) {
@@ -80,19 +106,11 @@ public class DiscordManager {
         return user.isBot() && jda.getSelfUser() != user;
     }
 
-    public void sendEmbed(TextChannel textChannel, String title, String body, String footer) {
-        textChannel.sendMessageEmbeds(
-                new EmbedBuilder().setTitle(title)
-                        .setDescription(body)
-                        .setFooter(footer)
-                        .build()).queue();
-    }
-
-    public void sendVerificationEmbed(String title, String body, String footer) {
-        TextChannel verificationChannel = jda.getTextChannelById(
-                verifier.getConfigProvider().getString("VerificationChannelID"));
+    public void sendInVerification(MessageEmbed messageEmbed) {
+        TextChannel verificationChannel =
+                jda.getTextChannelById(verifier.getConfig().channelId());
         if (verificationChannel == null) return;
-        sendEmbed(verificationChannel, title, body, footer);
+        verificationChannel.sendMessageEmbeds(messageEmbed).queue();
     }
 
     public void addEventListener(Object object) {
@@ -135,15 +153,13 @@ public class DiscordManager {
         Optional<Role> roleOptional = getRole(roleId);
         if (roleOptional.isEmpty()) return Collections.emptyList();
 
-        List<VerifiableUser> users = new ArrayList<>();
-        List<Member> members = guild.getMembersWithRoles(roleOptional.get());
-        for (Member member : members) {
-            Optional<VerifiableUser> userOptional =
-                    verifier.getUserManager().retrieveByMemberId(member.getId());
-            if (userOptional.isEmpty()) continue;
-            users.add(userOptional.get());
-        }
-        return users;
+        return guild.getMembersWithRoles(roleOptional.get()).stream()
+                .map(member -> {
+                    Optional<VerifiableUser> userOptional = verifier
+                            .getUserManager().retrieveByMemberId(member.getId());
+                    if (userOptional.isEmpty()) return null;
+                    return userOptional.get();
+                }).filter(Objects::nonNull).collect(Collectors.toList());
     }
     
 }

@@ -19,7 +19,7 @@
 package xyz.yawek.discordverifier.data;
 
 import xyz.yawek.discordverifier.DiscordVerifier;
-import xyz.yawek.discordverifier.utils.LogUtils;
+import xyz.yawek.discordverifier.util.LogUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -197,7 +197,7 @@ public class SQLiteDataAccess implements DataAccess {
     @Override
     public void setVerified(UUID uuid, boolean verified) {
         try {
-            String sql = "UPDATE players SET verified = true WHERE uuid = ?";
+            String sql = "UPDATE players SET verified = ? WHERE uuid = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setBoolean(1, verified);
             preparedStatement.setString(2, uuid.toString());

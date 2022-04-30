@@ -1,52 +1,87 @@
-UseMySQL: false
-DatabaseAddress: "localhost"
-DatabasePort: "3306"
-DatabaseName: "discordbot"
-DatabaseUser: "root"
-DatabasePassword: ""
-BotToken: "ENTER_YOUR_BOT_TOKEN_HERE"
-GuildID: "ENTER_YOUR_GUILD_ID_HERE"
-VerificationChannelID: "ENTER_YOUR_VERIFICATION_CHANNEL_ID_HERE"
-DeleteMessageAfter: 10
-VerificationExpireAfter: 120
-LimitRolesToOne: true
-ForceNicknamesOnDiscord: true
-Prefix: "&#FF5555&lDiscordVerifier &#AA0000» &#FF5555"
-AdminCommandUsage: "Available commands:\n&#FFFFFF/discord info <nick> &#FF5555- shows information about the player,\n&#FFFFFF/discord reload &#FF5555- reloads plugin."
-PlayerNotVerified: "Player is not verified."
-PlayerNotFound: "Player couldn't be found."
-PlayerInfo: "Information about the player &#FFFFFF%VAR%&#FF5555:\n&#FF5555UUID: &#FFFFFF%VAR2%,\n&#FF5555Discord ID: &#FFFFFF%VAR3%,\n&#FF5555Discord Name: &#FFFFFF%VAR4%,\n&#FF5555Online: &#FFFFFF%VAR5%&#FF5555."
-Online: "online"
-Offline: "offline"
-DiscordInfo: "Join our Discord server and get verified right now, if you haven't already: &#FFFFFFdiscord.gg/someserver&#FF5555."
-PlayerNotFoundTitle: "Player with nickname %NICKNAME% couldn't be found on the server."
-PlayerNotFoundBody: "You have to be on the server to get verified."
-PlayerNotFoundFooter: ""
-PlayerAlreadyVerifiedTitle: "Player with nickname %NICKNAME% is verified yet."
-PlayerAlreadyVerifiedBody: "If you want to undo your verification, use /discord unlink command in game"
-PlayerAlreadyVerifiedFooter: ""
-DiscordAlreadyVerifiedTitle: "Your Discord account is linked to the verified player yet."
-DiscordAlreadyVerifiedBody: "If you want to undo your verification, use /discord unlink command in game."
-DiscordAlreadyVerifiedFooter: ""
-VerificationAcceptedTitle: "Player %NICKNAME% has been found on the server."
-VerificationAcceptedBody: "You have to accept the verification, typing /discord accept in game."
-VerificationAcceptedFooter: ""
-AcceptVerification: "You received verification request from Discord account &#FFFFFF%VAR%&#FF5555. To accept verification, type &#FFFFFF/discord accept&#FF5555, to deny it, type &#FFFFFF/discord deny&#FF5555."
-VerificationExpired: "Verification request from Discord account &#FFFFFF%VAR% &#FF5555expired."
-VerifiedSuccessfully: "Your Discord account has been verified and successfully linked with Discord account &#FFFFFF%VAR%&#FF5555."
-VerificationDenied: "You denied verification request."
-NoVerificationRequired: "You don't have any verification request."
-VerificationSuccessfulTitle: "Verification was successful."
-VerificationSuccessfulBody: "You are now verified."
-VerificationSuccessfulFooter: ""
-VerificationDeniedTitle: "Verification has been denied."
-VerificationDeniedBody: "You cancelled the verification."
-VerificationDeniedFooter: ""
-NotVerified: "You are not verified."
-UnverifiedSuccesfully: "Successfully unlinked your account, you are now not seen as verified."
-ConfigReloaded: "Configuration has been reloaded."
-NotVerifiedYet: "Join our Discord server and get verified right now: &#FFFFFFdiscord.gg/someserver&#FF5555."
-Roles:
-  admin: "111111111111111111"
-  vip: "222222222222222222"
-  default: "333333333333333333"
+# Database settings.
+data:
+  # Set to 'SQLite' or 'MySQL'.
+  database: "SQLite"
+  # Change if you set database to the 'MySQL'.
+  mysql:
+    address: "localhost"
+    port: "3306"
+    database-name: "barricade"
+    user: "root"
+    password: ""
+discord:
+  # Set here your bot token. (more: https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token)
+  token: "ENTER_YOUR_BOT_TOKEN_HERE"
+  # Set here your Discord server ID. (more: https://support.discord.com/hc/pl/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-)
+  guild-id: "ENTER_YOUR_GUILD_ID_HERE"
+  # Set here your channel ID that will be used for verification commands. (more in the link above)
+  channel-id: "ENTER_YOUR_CHANNEL_ID_HERE"
+  # Delay in seconds after which each message sent in the verification channel will be deleted.
+  delete-message-after: 20
+  # Delay in seconds after which verification request will expire.
+  verification-expire-time: 120
+  # If set to true, only highest placed role (defined by player's permissions) will be assigned.
+  one-role-limit: true
+  # If set to true, Discord user nickname will inherit the nickname based on the linked player account.
+  force-nicknames: false
+  # List of permissions with their corresponding roles' IDs.
+  roles:
+#    admin: "111111111111111111" # If player has a permission group.admin and their account is verified, he will receive the role with ID 111111111111111111.
+#    vip: "222222222222222222"
+#    default: "333333333333333333"
+# All available messages which players and Discord users can see.
+# Available formats:
+# &#{HEX}{MESSAGE} - Text colored in one color.
+# &#gr{HEX1}{HEX2}{MESSAGE} - Text colored with a gradient of two colors.
+messages:
+  chat:
+    prefix: "&#FF5555&lDiscordVerifier &#AA0000» &#FF5555"
+    admin-command-usage:
+      - "&#FF5555Available commands:"
+      - "&#FFFFFF/discord info <nick> &#FF5555- shows information about the player,"
+      - "&#FFFFFF/discord reload &#FF5555- reloads plugin."
+    player-not-verified: "Player is not verified."
+    player-not-found: "Player cannot be found."
+    player-info:
+      - "&#FF5555Information about &#FFFFFF{}&#FF5555:"
+      - "&#FF5555UUID: &#FFFFFF{}"
+      - "&#FF5555Discord ID: &#FFFFFF{}"
+      - "&#FF5555Discord Name: &#FFFFFF{}"
+      - "&#FF5555Online: &#FFFFFF{}"
+    discord-info: "Join our Discord server and get verified right now, if you haven't already: &#FFFFFFdiscord.gg/someserver&#FF5555."
+    verification-request: "You received verification request from Discord account &#FFFFFF{}&#FF5555. To accept verification, type &#FFFFFF/discord accept&#FF5555, to deny it, type &#FFFFFF/discord deny&#FF5555."
+    verification-expired: "Verification request from Discord account &#FFFFFF{} &#FF5555expired."
+    verification-denied: "You denied verification request."
+    verified-successfully: "Your Discord account has been verified and successfully linked with Discord account &#FFFFFF{}&#FF5555."
+    no-requests: "You don't have any verification request."
+    not-verified: "You are not verified."
+    verification-canceled: "Successfully unlinked your account, you are not verified now."
+    not-verified-yet: "Join our Discord server and get verified right now: &#FFFFFFdiscord.gg/someserver&#FF5555."
+    config-reloaded: "Config has been reloaded."
+    online-in-message: "online"
+    offline-in-message: "offline"
+  discord:
+    player-not-found:
+      title: "Player with nickname {} cannot be found on the server."
+      body: "You have to be on the server to verify yourself and link your account."
+      footer: ""
+    player-already-verified:
+      title: "Player with nickname {} is verified yet."
+      body: "If you want to undo your verification, use /discord unlink command in-game."
+      footer: ""
+    discord-already-verified:
+      title: "Your Discord account is linked to the verified player yet."
+      body: "If you want to undo your verification, use /discord unlink command in-game."
+      footer: ""
+    verification-accepted:
+      title: "Player {} has been found on the server."
+      body: "You have to accept the verification, typing /discord accept in-game."
+      footer: ""
+    verification-denied:
+      title: "Verification has been denied."
+      body: "Player {} cancelled the verification in-game."
+      footer: ""
+    verification-success:
+      title: "Verification was successful."
+      body: "You are now verifed and your accounts are linked."
+      footer: "If you want to unlink your account, type /discord unlink in-game."

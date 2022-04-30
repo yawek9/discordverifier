@@ -16,15 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package xyz.yawek.discordverifier.listeners;
+package xyz.yawek.discordverifier.listener;
 
 import com.velocitypowered.api.event.EventTask;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.LoginEvent;
+import com.velocitypowered.api.proxy.Player;
 import xyz.yawek.discordverifier.DiscordVerifier;
 import xyz.yawek.discordverifier.manager.VerificationManager;
 import xyz.yawek.discordverifier.user.VerifiableUser;
-import xyz.yawek.discordverifier.utils.MessageUtils;
 
 public class LoginListener {
 
@@ -38,20 +38,19 @@ public class LoginListener {
     @Subscribe
     public EventTask onPlayerLogin(LoginEvent e) {
         return EventTask.async(() -> {
+            Player player = e.getPlayer();
+
             verifier.getDataProvider().updateUserIdentity(
-                            e.getPlayer().getUniqueId(), e.getPlayer().getUsername());
+                            player.getUniqueId(), player.getUsername());
 
             VerificationManager verificationManager = verifier.getVerificationManager();
-            verificationManager.updateRoles(e.getPlayer());
-            verificationManager.updateNickname(e.getPlayer());
+            verificationManager.updateRoles(player);
+            verificationManager.updateNickname(player);
 
             VerifiableUser user =
-                    verifier.getUserManager().create(e.getPlayer().getUniqueId());
+                    verifier.getUserManager().create(player.getUniqueId());
             if (!user.isVerified())
-                MessageUtils.sendMessageFromConfig(
-                        e.getPlayer(),
-                        "NotVerifiedYet",
-                        true);
+                player.sendMessage(verifier.getConfig().notVerifiedYet());
         });
     }
 
