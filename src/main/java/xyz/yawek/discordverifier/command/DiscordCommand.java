@@ -60,6 +60,10 @@ public class DiscordCommand implements SimpleCommand {
                 source.sendMessage(config.configReloaded());
                 return;
             }
+            if (args.length <= 1) {
+                source.sendMessage(config.adminCommandUsage());
+                return;
+            }
             Optional<VerifiableUser> userOptional = userManager.retrieveByNickname(args[1]);
             if (userOptional.isEmpty()) {
                 source.sendMessage(config.playerNotFound());
