@@ -99,8 +99,16 @@ public class Config {
 
     // Chat messages
 
-    public Component prefix() {
-        return configUtils.noPrefixMessage("messages.chat.prefix");
+    public Component noPermission() {
+        return configUtils.prefixedMessage("messages.chat.no-permission");
+    }
+
+    public Component notFromConsole() {
+        return configUtils.prefixedMessage("messages.chat.not-from-console");
+    }
+
+    public Component infoCommandUsage() {
+        return configUtils.prefixedMessage("messages.chat.info-command-usage");
     }
 
     public Component adminCommandUsage() {

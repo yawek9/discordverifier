@@ -28,7 +28,7 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import org.slf4j.Logger;
-import xyz.yawek.discordverifier.command.DiscordCommand;
+import xyz.yawek.discordverifier.command.CommandHandler;
 import xyz.yawek.discordverifier.config.Config;
 import xyz.yawek.discordverifier.config.ConfigProvider;
 import xyz.yawek.discordverifier.data.DataProvider;
@@ -98,8 +98,9 @@ public class DiscordVerifier {
 
         server.getEventManager().register(this, new LoginListener(this));
 
-        CommandMeta meta = server.getCommandManager().metaBuilder("discord").build();
-        server.getCommandManager().register(meta, new DiscordCommand(this));
+        CommandMeta meta = server.getCommandManager()
+                .metaBuilder("discord").build();
+        server.getCommandManager().register(meta, new CommandHandler(this));
     }
 
     public void reload() {

@@ -6,7 +6,7 @@ data:
   mysql:
     address: "localhost"
     port: "3306"
-    database-name: "barricade"
+    database-name: "discordverifier"
     user: "root"
     password: ""
 discord:
@@ -36,10 +36,9 @@ discord:
 messages:
   chat:
     prefix: "&#FF5555&lDiscordVerifier &#AA0000» &#FF5555"
-    admin-command-usage:
-      - "&#FF5555Available commands:"
-      - "&#FFFFFF/discord info <nick> &#FF5555- shows information about the player,"
-      - "&#FFFFFF/discord reload &#FF5555- reloads plugin."
+    no-permission: "You don't have permission to execute this command."
+    not-from-console: "You can't execute this command from console."
+    info-command-usage: "Correct usage: &#FFFFFF/discord info <nickname>&#FF5555."
     player-not-verified: "Player is not verified."
     player-not-found: "Player cannot be found."
     player-info:

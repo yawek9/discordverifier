@@ -33,8 +33,8 @@ public class ConfigProvider {
     private final DiscordVerifier verifier;
     private HashMap<String, Object> config;
 
-    public ConfigProvider(DiscordVerifier barricade) {
-        this.verifier = barricade;
+    public ConfigProvider(DiscordVerifier verifier) {
+        this.verifier = verifier;
     }
 
     public void loadConfig() {
