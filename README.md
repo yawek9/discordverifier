@@ -15,6 +15,16 @@ To do this, enter the server and type in verification channel '!verify (your nic
 After that, you will see a message on the server in-game, that you can accept the verification typing /discord accept or reject it by /discord deny command.
 If you accepted it and did everything right, roles set in config.yml should be assigned to you.
 
+## Commands
+- */discord reload* - reloads plugin configuration;
+- */discord info (nickname)* - shows information about verified player;
+- */discord accept/deny* - accepts/denies verification request;
+- */discord unlink* - cancels verification and unlinks Discord account.
+
 ## Permissions
-- *discordverifier.discord* - use the /discord (accept/deny) command;
-- *discordverifier.admin* - use /discord info and /discord reload commands.
+- *discordverifier.discord* - use the /discord command;
+- *discordverifier.reload* - use the /discord reload command;
+- *discordverifier.info* - use the /discord info command;
+- *discordverifier.accept* - use the /discord accept command;
+- *discordverifier.deny* - use the /discord deny command;
+- *discordverifier.unlink* - use the /discord unlink command.
