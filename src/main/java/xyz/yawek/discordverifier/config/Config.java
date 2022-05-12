@@ -111,10 +111,6 @@ public class Config {
         return configUtils.prefixedMessage("messages.chat.info-command-usage");
     }
 
-    public Component adminCommandUsage() {
-        return configUtils.listPrefixedMessage("messages.chat.admin-command-usage");
-    }
-
     public Component playerNotVerified() {
         return configUtils.prefixedMessage("messages.chat.player-not-verified");
     }

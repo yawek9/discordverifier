@@ -43,7 +43,7 @@ import java.nio.file.Path;
 
 @Plugin(id = "discordverifier",
         name = "DiscordVerifier",
-        version = "1.0.6",
+        version = "1.0.7",
         url = "https://yawek.xyz",
         description = "Simple Velocity Discord account linking plugin.",
         authors = {"yawek9"},
@@ -55,7 +55,7 @@ public class DiscordVerifier {
 
     private static DiscordVerifier plugin;
 
-    public static final String VERSION = "1.0.6";
+    public static final String VERSION = "1.0.7";
 
     private final Logger logger;
     private final ProxyServer server;

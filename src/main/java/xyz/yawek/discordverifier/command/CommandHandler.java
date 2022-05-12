@@ -83,4 +83,5 @@ public class CommandHandler implements SimpleCommand {
             return CompletableFuture.completedFuture(Collections.emptyList());
         }
     }
+
 }
