@@ -53,8 +53,7 @@ public class VerificationManager {
         verifyingPlayers.put(player, member);
         player.sendMessage(config.verificationRequest(member.getUser().getAsTag()));
         verifier.getServer().getScheduler()
-                .buildTask(DiscordVerifier.getVerifier(),
-                        () -> cancelVerification(member, player))
+                .buildTask(verifier, () -> cancelVerification(member, player))
                 .delay(config.verificationExpireTime(), TimeUnit.SECONDS)
                 .schedule();
         return true;
