@@ -6,7 +6,7 @@
 
     <groupId>xyz.yawek</groupId>
     <artifactId>DiscordVerifier</artifactId>
-    <version>1.0.7</version>
+    <version>1.0.8</version>
 
     <pluginRepositories>
         <pluginRepository>

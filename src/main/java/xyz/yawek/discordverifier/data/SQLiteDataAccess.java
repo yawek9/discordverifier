@@ -61,7 +61,7 @@ public class SQLiteDataAccess implements DataAccess {
                           last_nickname DEFAULT NULL,
                           verified DEFAULT 0,
                           discord_id DEFAULT NULL,
-                          version DEFAULT "1.0.7",
+                          version DEFAULT "1.0.8",
                           PRIMARY KEY (uuid)
                         )""";
             Statement statement = connection.createStatement();
