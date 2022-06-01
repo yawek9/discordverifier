@@ -66,6 +66,7 @@ public class SQLiteDataAccess implements DataAccess {
                         )""";
             Statement statement = connection.createStatement();
             statement.execute(sql);
+            statement.close();
             LogUtils.infoDataAccess("Successfully connected to the SQLite database.");
         } catch (Exception e) {
             LogUtils.errorDataAccess("Unable to connect to the SQLite database.");
@@ -88,9 +89,8 @@ public class SQLiteDataAccess implements DataAccess {
 
     @Override
     public String getNickname(UUID uuid) {
-        try {
-            String sql = "SELECT last_nickname FROM players WHERE uuid = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT last_nickname FROM players WHERE uuid = ?")) {
             preparedStatement.setString(1, uuid.toString());
             ResultSet resultSet = preparedStatement.executeQuery();
             return resultSet.next() ? resultSet.getString(1) : null;
@@ -103,9 +103,8 @@ public class SQLiteDataAccess implements DataAccess {
 
     @Override
     public void setNickname(UUID uuid, String nickname) {
-        try {
-            String sql = "UPDATE players SET last_nickname = ? WHERE uuid = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "UPDATE players SET last_nickname = ? WHERE uuid = ?")) {
             preparedStatement.setString(1, nickname);
             preparedStatement.setString(2, uuid.toString());
             preparedStatement.execute();
@@ -118,9 +117,8 @@ public class SQLiteDataAccess implements DataAccess {
 
     @Override
     public String getUUID(String nickname) {
-        try {
-            String sql = "SELECT uuid FROM players WHERE last_nickname = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT uuid FROM players WHERE last_nickname = ?")) {
             preparedStatement.setString(1, nickname);
             ResultSet resultSet = preparedStatement.executeQuery();
             return resultSet.next() ? resultSet.getString(1) : null;
@@ -133,9 +131,8 @@ public class SQLiteDataAccess implements DataAccess {
 
     @Override
     public String getUUIDByDiscordId(String discordId) {
-        try {
-            String sql = "SELECT uuid FROM players WHERE discord_id = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT uuid FROM players WHERE discord_id = ?")) {
             preparedStatement.setString(1, discordId);
             ResultSet resultSet = preparedStatement.executeQuery();
             return resultSet.next() ? resultSet.getString(1) : null;
@@ -149,9 +146,8 @@ public class SQLiteDataAccess implements DataAccess {
 
     @Override
     public void setUUID(String nickname, UUID uuid) {
-        try {
-            String sql = "UPDATE players SET uuid = ? WHERE last_nickname = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "UPDATE players SET uuid = ? WHERE last_nickname = ?")) {
             preparedStatement.setString(1, uuid.toString());
             preparedStatement.setString(2, nickname);
             preparedStatement.execute();
@@ -164,9 +160,8 @@ public class SQLiteDataAccess implements DataAccess {
 
     @Override
     public boolean isVerified(UUID uuid) {
-        try {
-            String sql = "SELECT verified FROM players WHERE uuid = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT verified FROM players WHERE uuid = ?")) {
             preparedStatement.setString(1, uuid.toString());
             ResultSet resultSet = preparedStatement.executeQuery();
             return resultSet.next() && resultSet.getBoolean(1);
@@ -180,9 +175,8 @@ public class SQLiteDataAccess implements DataAccess {
 
     @Override
     public boolean isVerified(String memberId) {
-        try {
-            String sql = "SELECT verified FROM players WHERE discord_id = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT verified FROM players WHERE discord_id = ?")) {
             preparedStatement.setString(1, memberId);
             ResultSet resultSet = preparedStatement.executeQuery();
             return resultSet.next() && resultSet.getBoolean(1);
@@ -196,9 +190,8 @@ public class SQLiteDataAccess implements DataAccess {
 
     @Override
     public void setVerified(UUID uuid, boolean verified) {
-        try {
-            String sql = "UPDATE players SET verified = ? WHERE uuid = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "UPDATE players SET verified = ? WHERE uuid = ?")) {
             preparedStatement.setBoolean(1, verified);
             preparedStatement.setString(2, uuid.toString());
             preparedStatement.execute();
@@ -211,9 +204,8 @@ public class SQLiteDataAccess implements DataAccess {
 
     @Override
     public String getDiscordId(UUID uuid) {
-        try {
-            String sql = "SELECT discord_id FROM players WHERE uuid = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT discord_id FROM players WHERE uuid = ?")) {
             preparedStatement.setString(1, uuid.toString());
             ResultSet resultSet = preparedStatement.executeQuery();
             return resultSet.next() ? resultSet.getString(1) : null;
@@ -226,9 +218,8 @@ public class SQLiteDataAccess implements DataAccess {
 
     @Override
     public void setDiscordId(UUID uuid, String discordId) {
-        try {
-            String sql = "UPDATE players SET discord_id = ? WHERE uuid = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "UPDATE players SET discord_id = ? WHERE uuid = ?")) {
             preparedStatement.setString(1, discordId);
             preparedStatement.setString(2, uuid.toString());
             preparedStatement.execute();
@@ -246,9 +237,8 @@ public class SQLiteDataAccess implements DataAccess {
             return;
         }
 
-        try {
-            String sql = "INSERT INTO players (uuid, last_nickname, version) VALUES (?, ?, ?)";
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "INSERT INTO players (uuid, last_nickname, version) VALUES (?, ?, ?)")) {
             preparedStatement.setString(1, uuid.toString());
             preparedStatement.setString(2, nickname);
             preparedStatement.setString(3, DiscordVerifier.VERSION);
@@ -261,10 +251,8 @@ public class SQLiteDataAccess implements DataAccess {
     }
 
     private boolean recordExists(String tableName, String recordName, String recordValue) {
-        try {
+        try (Statement statement = connection.createStatement()) {
             String query = "SELECT * FROM " + tableName + " WHERE " + recordName + " = \"" + recordValue + "\"";
-            Statement statement;
-            statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(query);
             return resultSet.next();
         } catch (SQLException e) {
