@@ -20,32 +20,31 @@ package xyz.yawek.discordverifier.listener;
 
 import com.velocitypowered.api.event.EventTask;
 import com.velocitypowered.api.event.Subscribe;
-import com.velocitypowered.api.event.connection.LoginEvent;
+import com.velocitypowered.api.event.connection.PostLoginEvent;
 import com.velocitypowered.api.proxy.Player;
 import xyz.yawek.discordverifier.DiscordVerifier;
-import xyz.yawek.discordverifier.manager.VerificationManager;
+import xyz.yawek.discordverifier.user.VerifiableUser;
 
-public class LoginListener {
+public class PostLoginListener {
 
-    private final DiscordVerifier verifier;
+  private final DiscordVerifier verifier;
 
-    public LoginListener(DiscordVerifier verifier) {
-        this.verifier = verifier;
-    }
+  public PostLoginListener(DiscordVerifier verifier) {
+    this.verifier = verifier;
+  }
 
-    @SuppressWarnings("unused")
-    @Subscribe
-    public EventTask onPlayerLogin(LoginEvent e) {
-        return EventTask.async(() -> {
-            Player player = e.getPlayer();
+  @SuppressWarnings("unused")
+  @Subscribe
+  public EventTask onPlayerLogin(PostLoginEvent e) {
+    return EventTask.async(() -> {
+      Player player = e.getPlayer();
 
-            verifier.getDataProvider().updateUserIdentity(
-                            player.getUniqueId(), player.getUsername());
-
-            VerificationManager verificationManager = verifier.getVerificationManager();
-            verificationManager.updateRoles(player);
-            verificationManager.updateNickname(player);
-        });
-    }
+      VerifiableUser user =
+          verifier.getUserManager().create(player.getUniqueId());
+      if (!user.isVerified()) {
+        player.sendMessage(verifier.getConfig().notVerifiedYet());
+      }
+    });
+  }
 
 }

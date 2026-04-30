@@ -34,6 +34,7 @@ import xyz.yawek.discordverifier.config.ConfigProvider;
 import xyz.yawek.discordverifier.data.DataProvider;
 import xyz.yawek.discordverifier.discordlistener.MessageReceivedListener;
 import xyz.yawek.discordverifier.listener.LoginListener;
+import xyz.yawek.discordverifier.listener.PostLoginListener;
 import xyz.yawek.discordverifier.manager.DiscordManager;
 import xyz.yawek.discordverifier.manager.LuckPermsManager;
 import xyz.yawek.discordverifier.manager.VerifiableUserManager;
@@ -97,6 +98,7 @@ public class DiscordVerifier {
         this.verificationManager = new VerificationManager(this);
 
         server.getEventManager().register(this, new LoginListener(this));
+        server.getEventManager().register(this, new PostLoginListener(this));
 
         CommandMeta meta = server.getCommandManager()
                 .metaBuilder("discord").build();
