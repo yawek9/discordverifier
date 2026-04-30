@@ -18,21 +18,25 @@
 
 package xyz.yawek.discordverifier.manager;
 
-import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.requests.GatewayIntent;
-import xyz.yawek.discordverifier.DiscordVerifier;
-import xyz.yawek.discordverifier.config.Config;
-import xyz.yawek.discordverifier.user.VerifiableUser;
-import xyz.yawek.discordverifier.util.LogUtils;
-
-import javax.security.auth.login.LoginException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import xyz.yawek.discordverifier.DiscordVerifier;
+import xyz.yawek.discordverifier.config.Config;
+import xyz.yawek.discordverifier.user.VerifiableUser;
+import xyz.yawek.discordverifier.util.LogUtils;
 
 public class DiscordManager {
 
@@ -66,19 +70,21 @@ public class DiscordManager {
                     GatewayIntent.DIRECT_MESSAGE_REACTIONS,
                     GatewayIntent.DIRECT_MESSAGE_TYPING,
                     GatewayIntent.DIRECT_MESSAGES,
-                    GatewayIntent.GUILD_BANS,
-                    GatewayIntent.GUILD_EMOJIS,
-                    GatewayIntent.GUILD_EMOJIS,
+                    GatewayIntent.GUILD_MODERATION,
+                    GatewayIntent.GUILD_EXPRESSIONS,
                     GatewayIntent.GUILD_INVITES,
-                    GatewayIntent.GUILD_MESSAGE_REACTIONS,
                     GatewayIntent.GUILD_MESSAGE_REACTIONS,
                     GatewayIntent.GUILD_MESSAGE_TYPING,
                     GatewayIntent.GUILD_MESSAGES,
                     GatewayIntent.GUILD_PRESENCES,
-                    GatewayIntent.GUILD_VOICE_STATES
-            ).build().awaitReady();
+                    GatewayIntent.GUILD_VOICE_STATES,
+                    GatewayIntent.MESSAGE_CONTENT
+                )
+                .disableCache(CacheFlag.SCHEDULED_EVENTS)
+                .build()
+                .awaitReady();
             return true;
-        } catch (LoginException | InterruptedException e) {
+        } catch (InterruptedException e) {
             LogUtils.errorDiscord("Unable to connect to the Discord bot. " +
                     "Make sure you set 'discord' settings correctly in the config.yml.");
             e.printStackTrace();
