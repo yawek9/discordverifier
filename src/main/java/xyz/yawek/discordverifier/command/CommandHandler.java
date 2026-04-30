@@ -21,10 +21,19 @@ package xyz.yawek.discordverifier.command;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import xyz.yawek.discordverifier.DiscordVerifier;
-import xyz.yawek.discordverifier.command.subcommand.*;
+import xyz.yawek.discordverifier.command.subcommand.AcceptCommand;
+import xyz.yawek.discordverifier.command.subcommand.DenyCommand;
+import xyz.yawek.discordverifier.command.subcommand.InfoCommand;
+import xyz.yawek.discordverifier.command.subcommand.ReloadCommand;
+import xyz.yawek.discordverifier.command.subcommand.UnlinkCommand;
 import xyz.yawek.discordverifier.config.Config;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class CommandHandler implements SimpleCommand {
@@ -62,23 +71,31 @@ public class CommandHandler implements SimpleCommand {
 
     @Override
     public CompletableFuture<List<String>> suggestAsync(Invocation invocation) {
-        CommandSource source = invocation.source();
+        CommandSource sender = invocation.source();
         String[] args = invocation.arguments();
-        if (args.length == 1) {
-            List<String> firstArguments = new ArrayList<>();
-            for (String commandString : commandMap.keySet()) {
-                if (commandMap.get(commandString)
-                        instanceof PermissibleCommand permissibleCommand) {
-                    if (source.hasPermission(permissibleCommand.getPermission()))
-                        firstArguments.add(commandString);
-                } else {
-                    firstArguments.add(commandString);
+
+        List<String> commandList = new ArrayList<>();
+        for (String commandString : commandMap.keySet()) {
+            if (commandMap.get(
+                commandString) instanceof PermissibleCommand permissibleCommand) {
+                if (sender.hasPermission(permissibleCommand.getPermission())) {
+                    commandList.add(commandString);
                 }
+            } else {
+                commandList.add(commandString);
             }
-            return CompletableFuture.completedFuture(firstArguments);
-        } else if (args.length > 1 && commandMap.containsKey(args[0])) {
-            return CompletableFuture.completedFuture(commandMap.get(args[0]).suggest(source,
-                    Arrays.copyOfRange(args, 1, args.length)));
+        }
+        if (args.length == 0) {
+            return CompletableFuture.completedFuture(commandList);
+        } else if (args.length == 1) {
+            return CompletableFuture.completedFuture(
+                commandList.stream()
+                    .filter(commandString -> commandString.startsWith(args[0]))
+                    .toList()
+            );
+        } else if (args.length == 2 && commandMap.containsKey(args[0])) {
+            return CompletableFuture.completedFuture(commandMap.get(args[0])
+                .suggest(sender, Arrays.copyOfRange(args, 1, args.length)));
         } else {
             return CompletableFuture.completedFuture(Collections.emptyList());
         }
