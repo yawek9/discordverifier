@@ -18,6 +18,17 @@
 
 package xyz.yawek.discordverifier.util;
 
+import static xyz.yawek.discordverifier.util.ColorUtilsConstants.COLOR_DECORATION_FORMAT;
+import static xyz.yawek.discordverifier.util.ColorUtilsConstants.COLOR_FORMAT;
+import static xyz.yawek.discordverifier.util.ColorUtilsConstants.DECORATION_FORMAT;
+import static xyz.yawek.discordverifier.util.ColorUtilsConstants.DECORATION_MAP;
+import static xyz.yawek.discordverifier.util.ColorUtilsConstants.LEGACY_COLOR_MAP;
+import static xyz.yawek.discordverifier.util.ColorUtilsConstants.URL_FORMAT;
+
+import java.awt.Color;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TextReplacementConfig;
@@ -25,162 +36,167 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ColorUtils {
 
-    public static Component decorate(Component input) {
-        TextComponent.Builder outputBuilder = Component.text();
-        String stringInput  = PlainTextComponentSerializer.plainText().serialize(input);
-        Pattern colorOrGradientPattern = Pattern
-                .compile("(&#gr#[A-Fa-f0-9]{6}#[A-Fa-f0-9]{6})|(&#[A-Fa-f0-9]{6})");
-        Matcher colorOrGradientMatcher = colorOrGradientPattern.matcher(stringInput);
-        Pattern nextTextPattern = Pattern.compile(".+?(?=&#)", Pattern.DOTALL);
-        while (colorOrGradientMatcher.find()) {
-            String group = colorOrGradientMatcher.group();
-            boolean isGradient = group.length() > 10;
-            if (isGradient) {
-                Matcher gradientMatcher = Pattern.compile("&#gr#[A-Fa-f0-9]{6}#[A-Fa-f0-9]{6}")
-                        .matcher(stringInput);
-                if (!gradientMatcher.find()) {
-                    continue;
-                }
-                String gradientGroup = gradientMatcher.group();
-                stringInput = stringInput.replaceFirst(gradientGroup, "");
-                Matcher nextColorMatcher = nextTextPattern.matcher(stringInput);
-                String toGradient;
-                if (nextColorMatcher.find()) {
-                    toGradient = nextColorMatcher.group();
-                } else {
-                    toGradient = stringInput;
-                }
-                if (colorOrGradientPattern.matcher(toGradient).find()) {
-                    continue;
-                }
-                TextDecoration decoration = retrieveDecoration(toGradient);
-                stringInput = stringInput.replaceFirst(Pattern.quote(toGradient), "");
-                outputBuilder.append(makeGradient(
-                        retrieveFirstColor(gradientGroup),
-                        retrieveFirstColor(gradientGroup.replaceFirst("#[A-Fa-f0-9]{6}", "")),
-                        toGradient.replaceAll("&[K-ok-o]", ""),
-                        decoration));
-            } else {
-                Matcher singleColorMatcher = Pattern.compile("&#[A-Fa-f0-9]{6}").matcher(stringInput);
-                if (!singleColorMatcher.find()) {
-                    continue;
-                }
-                String colorGroup = singleColorMatcher.group();
-                stringInput = stringInput.replaceFirst(colorGroup, "");
-                Matcher nextColorMatcher = nextTextPattern.matcher(stringInput);
-                String toColor;
-                if (nextColorMatcher.find()) {
-                    toColor = nextColorMatcher.group();
-                } else {
-                    toColor = stringInput;
-                }
-                if (colorOrGradientPattern.matcher(toColor).find()) {
-                    continue;
-                }
-                TextDecoration decoration = retrieveDecoration(toColor);
-                Component toAppend = Component.text(toColor.replaceAll("&[K-ok-o]", ""))
-                        .color(TextColor.fromHexString(colorGroup.replace("&", "")));
-                if (decoration != null) toAppend = toAppend.decorate(decoration);
-                outputBuilder.append(toAppend);
-                stringInput = stringInput.replaceFirst(Pattern.quote(toColor), "");
+    public static Component decorate(@NotNull String plainText) {
+        Matcher colorMatcher = Pattern.compile(COLOR_DECORATION_FORMAT, Pattern.DOTALL)
+            .matcher(plainText);
+        TextComponent.Builder resultBuilder = Component.text();
+
+        int lastEnd = 0;
+        while (colorMatcher.find()) {
+            // If matcher leaves some leftovers before first occurrence of formatting,
+            // we append it as first plain component
+            if (colorMatcher.start() > lastEnd) {
+                resultBuilder.append(
+                    Component.text(plainText.substring(lastEnd, colorMatcher.start())));
             }
+
+            String partText = colorMatcher.group(4);
+            String colorString = colorMatcher.group(1);
+
+            // Skip empty matches (when colors are directly adjacent)
+            if (partText.isEmpty()) {
+                lastEnd = colorMatcher.end();
+                continue;
+            }
+
+            Component partComponent;
+            boolean isGradient = colorMatcher.group(2) != null;
+            if (isGradient) {
+                String secondColorString = colorMatcher.group(2);
+                partComponent = makeGradient(Color.decode(colorString),
+                    Color.decode(secondColorString), partText);
+            } else {
+                TextColor color;
+                if (colorString.length() == 1) {
+                    color = LEGACY_COLOR_MAP.get(colorString.charAt(0));
+                } else {
+                    color = TextColor.fromCSSHexString(colorString);
+                }
+                partComponent = Component.text(partText).color(color);
+            }
+            TextDecoration decoration = getDecoration(colorMatcher.group(3));
+            if (decoration != null) {
+                partComponent = partComponent.decorate(decoration);
+            }
+            resultBuilder.append(partComponent);
+            lastEnd = colorMatcher.end();
         }
-        return makeUrlsClickable(outputBuilder.build());
+        // If text has no formatting at all, we append it as plain component
+        if (lastEnd < plainText.length()) {
+            resultBuilder.append(Component.text(plainText.substring(lastEnd)));
+        }
+        return makeUrlsClickable(resultBuilder.build());
     }
 
-    private static Component makeGradient(Color firstColor, Color secondColor,
-                                          String text, @Nullable TextDecoration textDecoration) {
+    public static Component decorate(Component component) {
+        return decorate(PlainTextComponentSerializer.plainText().serialize(component));
+    }
+
+    public static Component decorate(String input, Object... replacements) {
+        if (replacements.length % 2 != 0) {
+            throw new IllegalArgumentException("Replacements must be provided in pairs "
+                + "(placeHolder, replacement)");
+        }
+
+        Component result = ColorUtils.decorate(input);
+        String workingInput = input;
+        for (int i = 0; i < replacements.length; i += 2) {
+            String placeHolder = (String) replacements[i];
+            Object replacement = replacements[i + 1];
+
+            if (!(replacement instanceof Component)) {
+                workingInput = workingInput.replace("%" + placeHolder + "%",
+                    String.valueOf(replacement));
+            }
+        }
+
+        if (!workingInput.equals(input)) {
+            result = ColorUtils.decorate(workingInput);
+        }
+
+        for (int i = 0; i < replacements.length; i += 2) {
+            String placeHolder = (String) replacements[i];
+            Object replacement = replacements[i + 1];
+
+            if (replacement instanceof Component replacementComponent) {
+                result = result.replaceText(TextReplacementConfig.builder()
+                    .matchLiteral("%" + placeHolder + "%")
+                    .replacement(replacementComponent)
+                    .build());
+            }
+        }
+        return result;
+    }
+
+    private static Component makeGradient(Color firstColor, Color secondColor, String text) {
         int length = text.replaceAll(" ", "").length();
         double[] rColor = interpolateColor(firstColor.getRed(), secondColor.getRed(), length);
         double[] gColor = interpolateColor(firstColor.getGreen(), secondColor.getGreen(), length);
         double[] bColor = interpolateColor(firstColor.getBlue(), secondColor.getBlue(), length);
 
-        TextComponent.Builder outputBuilder = Component.text();
-
+        TextComponent.Builder resultBuilder = Component.text();
         int i = 0;
         for (char c : text.toCharArray()) {
-            if (c == ' ') {outputBuilder.append(Component.text(" ")); continue;}
-            Color color = new Color(
-                    (int) Math.round(rColor[i]),
-                    (int) Math.round(gColor[i]),
-                    (int) Math.round(bColor[i]));
+            if (c == ' ') {
+                resultBuilder.append(Component.text(" "));
+                continue;
+            }
+            Color color = new Color((int) Math.round(rColor[i]),
+                (int) Math.round(gColor[i]), (int) Math.round(bColor[i]));
             Component toAppend = Component.text(c).color(TextColor.fromCSSHexString(
-                    "#" + Integer.toHexString(color.getRGB()).substring(2)));
-            if (textDecoration != null) toAppend = toAppend.decorate(textDecoration);
-            outputBuilder.append(toAppend);
+                "#" + Integer.toHexString(color.getRGB()).substring(2)));
+            resultBuilder.append(toAppend);
             i++;
         }
-        return outputBuilder.build();
+        return resultBuilder.build();
     }
 
     public static Component makeUrlsClickable(Component component) {
-        Pattern urlPattern = Pattern.compile(
-                "https?://(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\\." +
-                        "[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)");
+        Pattern urlPattern = Pattern.compile(URL_FORMAT);
         TextReplacementConfig textReplacementConfig = TextReplacementConfig.builder()
-                .replacement((matchResult, builder) -> Component.text(matchResult.group())
-                        .clickEvent(ClickEvent.openUrl(matchResult.group())))
-                .match(urlPattern).build();
+            .replacement((matchResult, builder) -> Component.text(matchResult.group())
+                .clickEvent(ClickEvent.openUrl(matchResult.group())))
+            .match(urlPattern)
+            .build();
         return component.replaceText(textReplacementConfig);
     }
 
-    public String stripColor(String string) {
-        return string.replaceAll("(&#gr#[A-Fa-f0-9]{6}#[A-Fa-f0-9]{6})" +
-                "|(&#[A-Fa-f0-9]{6})", "");
+    public static String stripColor(String string) {
+        if (string == null) {
+            return null;
+        }
+        return string.replaceAll(COLOR_FORMAT, "");
     }
 
     public static String stripDecoration(String string) {
-        if (containsDecoration(string)) {
-            string = string.replaceAll("&[K-ok-o]", "");
+        if (!containsDecoration(string)) {
+            return string;
         }
-        return string;
-    }
-
-    private static Color retrieveFirstColor(String string) {
-        Matcher colorMatcher = Pattern.compile("#[A-Fa-f0-9]{6}").matcher(string);
-        colorMatcher.find();
-        return Color.decode(colorMatcher.group());
-    }
-
-    private static TextDecoration retrieveDecoration(String string) {
-        Matcher decorationMatcher = Pattern.compile("&[K-ok-o]").matcher(string);
-        if (decorationMatcher.find()) {
-            return getDecoration(decorationMatcher.group());
-        }
-        return null;
+        return string.replaceAll(DECORATION_FORMAT, "");
     }
 
     private static boolean containsDecoration(String string) {
-        return new ArrayList<>(Arrays.asList("&k", "&l", "&m", "&n", "&o"))
-                .stream().anyMatch(string::contains);
+        if (string == null) {
+            return false;
+        }
+        return DECORATION_MAP.keySet().stream().anyMatch(string::contains);
     }
 
-    private static TextDecoration getDecoration(String string) {
-        return switch (string) {
-            case "&k" -> TextDecoration.OBFUSCATED;
-            case "&l" -> TextDecoration.BOLD;
-            case "&m" -> TextDecoration.STRIKETHROUGH;
-            case "&n" -> TextDecoration.UNDERLINED;
-            case "&o" -> TextDecoration.ITALIC;
-            default -> null;
-        };
+    private static @Nullable TextDecoration getDecoration(String string) {
+        if (string == null) {
+            return null;
+        }
+        return DECORATION_MAP.getOrDefault(string, null);
     }
 
     private static double[] interpolateColor(double from, double to, int max) {
         final double[] res = new double[max];
-        for (int i = 0; i < max; i++) {
-            res[i] = from + i * ((to - from) / (max - 1));
-        }
+        IntStream.rangeClosed(0, max - 1).forEach(i -> res[i] = from + i * ((to - from) / (max - 1)));
         return res;
     }
 
