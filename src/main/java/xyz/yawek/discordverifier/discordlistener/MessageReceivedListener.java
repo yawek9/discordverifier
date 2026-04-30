@@ -21,7 +21,7 @@ package xyz.yawek.discordverifier.discordlistener;
 import com.velocitypowered.api.proxy.Player;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -69,14 +69,14 @@ public class MessageReceivedListener extends ListenerAdapter {
             return;
         }
         String nickname = message.getContentRaw().replaceFirst("!verify ", "");
-        if (nickname.length() > 40) {
+        if (!nickname.matches("^[a-zA-Z0-9_]{2,16}$")) {
             message.delete().queue();
             return;
         }
         Optional<VerifiableUser> user =
                 verifier.getUserManager().retrieveByNickname(nickname);
         Optional<Player> playerOptional = verifier.getServer().getPlayer(nickname);
-        TextChannel channel = e.getTextChannel();
+        TextChannel channel = (TextChannel) e.getChannel();
         if (playerOptional.isEmpty() || user.isEmpty()) {
             channel.sendMessageEmbeds(config.playerNotFound(nickname)).queue();
             deleteAfterDelay(message);
